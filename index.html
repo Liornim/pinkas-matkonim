@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.0.6">
+<meta name="app-version" content="1.0.7">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.0.6</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.0.7</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -189,7 +189,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.0.6";
+var APP_VERSION="1.0.7";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -349,7 +349,7 @@ back.onclick=function(){
 el("gear").onclick=function(){go("settings")};
 function blank(){return{id:"r"+Date.now(),title:"",source:"",link:"",yield:"",cat:"",
   servings:1,svKnown:true,stated:null,statedBasis:"total",
-  ingredients:[],steps:"",stepsSrc:"",note:""}}
+  ingredients:[],ingredientsSrc:"",steps:"",stepsSrc:"",note:""}}
 
 /* ===== המספרים שמוצגים: מה שהמתכון מפרסם קודם, החישוב שלנו רק כגיבוי ===== */
 function mulM(m,n){return{k:m.k*n,p:m.p*n,c:m.c*n,f:m.f*n}}
@@ -411,7 +411,7 @@ function n0(v){var x=Number(v);return isFinite(x)?x:0}
 function sanitizeRecipe(o){
   if(!o||typeof o!=="object"||!o.id||typeof o.id!=="string")return null;
   var r={id:s(o.id,60),title:s(o.title,200),source:s(o.source,120),yield:s(o.yield,80),
-    cat:s(o.cat,60),by:s(o.by,60),note:s(o.note,4000),steps:s(o.steps,8000),stepsSrc:s(o.stepsSrc,8000),
+    cat:s(o.cat,60),by:s(o.by,60),note:s(o.note,4000),steps:s(o.steps,8000),stepsSrc:s(o.stepsSrc,8000),ingredientsSrc:s(o.ingredientsSrc,4000),
     updated:n0(o.updated),link:safeUrl(o.link),
     servings:Math.max(1,Math.min(999,Math.round(n0(o.servings))||1)),
     statedBasis:(o.statedBasis==="serving")?"serving":"total",svKnown:o.svKnown!==false,
@@ -653,7 +653,11 @@ function drawDetail(){
       '<span style="font-size:14.5px">'+esc(i.name)+' <span class="tiny" style="display:inline">· '+amountLabel(i)+'</span>'+srcTag(i.src)+estTag(i)+'</span>'+
       '<b>'+r0(v.k)+'</b></div><div class="bar"><i style="width:'+(v.k/maxK*100)+'%"></i></div>'+
       '<div class="tiny">חלבון '+r1(v.p)+' · פחמימות '+r1(v.c)+' · שומן '+r1(v.f)+' · רווי '+r1(v.s)+' · סיבים '+r1(v.b)+'</div></div>'}).join("")
-    :'<div class="ing tiny">לא הוזנו מרכיבים</div>')+'</div></div>'+
+    :'<div class="ing tiny">לא הוזנו מרכיבים</div>')+'</div>'+
+    (r.ingredientsSrc?'<details><summary>הצגת רשימת המרכיבים כמו במקור</summary>'+
+      '<div class="note" dir="auto" style="white-space:pre-wrap;line-height:1.7;color:var(--ink)">'+
+      esc(r.ingredientsSrc)+'</div></details>':"")+
+    '</div>'+
   stepsHtml+
   (r.note?'<div class="note">'+esc(r.note)+'</div>':"")+
   '<div class="row" style="margin-top:28px"><button class="btn-ghost" data-edit="1">עריכה</button>'+
@@ -721,7 +725,12 @@ function drawEdit(){
     (e.ingredients.length?'<div class="tiny" style="margin-top:9px">סה"כ '+r0(t.k)+' קלוריות · '+r1(t.p)+' חלבון · '+r1(t.c)+' פחמימות · '+r1(t.f)+' שומן</div>':"")+
     '<label for="q">הוספת מרכיב</label>'+
     '<input id="q" placeholder="חיפוש במאגר, או שם חדש משלך" value="'+esc(query)+'" autocomplete="off">'+
-    '<div id="res"></div></div>'+
+    '<div id="res"></div>'+
+    '<label for="isrc">רשימת המרכיבים כמו במקור</label>'+
+    '<textarea id="isrc" dir="auto" placeholder="שורה אחת לכל מרכיב, בדיוק כפי שמופיע בפוסט">'+esc(e.ingredientsSrc||"")+'</textarea>'+
+    '<div class="row" style="margin-top:8px"><button class="btn-ghost" id="reparse">פירוק מחדש מהטקסט</button></div>'+
+    '<div class="tiny">הפירוק מחדש מחליף את רשימת המרכיבים שלמעלה. שימושי כשהקריאה המקורית פספסה כמות.</div>'+
+    '</div>'+
   '<div class="sec"><h3>אופן ההכנה</h3>'+
   '<label for="stS">כמו במקור</label>'+
   '<textarea id="stS" placeholder="הטקסט המקורי כפי שהופיע בפוסט">'+esc(e.stepsSrc||"")+'</textarea>'+
@@ -751,6 +760,16 @@ function drawEdit(){
   };
   el("nt").oninput=function(v){e.note=v.target.value};
   el("q").oninput=function(v){query=v.target.value;drawResults()};
+  if(el("isrc"))el("isrc").oninput=function(v){e.ingredientsSrc=v.target.value};
+  if(el("reparse"))el("reparse").onclick=function(){
+    var txt=(e.ingredientsSrc||"").trim();
+    if(!txt){alert("אין טקסט מרכיבים לפרק. הדבק אותו בשדה שמעל.");return}
+    var lines=txt.split("\n").map(cleanLine).filter(function(l){return l.length>1}),out=[];
+    lines.forEach(function(l){var g=parseIngLine(l);if(g)out.push(g)});
+    if(!out.length){alert("לא הצלחתי לזהות מרכיבים בטקסט הזה.");return}
+    if(e.ingredients.length&&!confirm("להחליף את "+e.ingredients.length+" המרכיבים הקיימים ב-"+out.length+" שיפורקו מהטקסט?"))return;
+    e.ingredients=out;drawEdit();
+  };
   if(el("ncb"))el("ncb").onclick=function(){
     var v=el("nc").value.trim();
     if(!v){alert("הקלד שם קטגוריה.");return}
@@ -1419,7 +1438,11 @@ function parseRecipe(text){
   var title=findTitle(raw,iIng>0?iIng:Math.min(8,raw.length),source);
   var ingLines=[],stepLines=[];
   var from=iIng>=0?iIng+1:0,to=iStep>=0?iStep:raw.length;
-  for(i=from;i<to;i++)ingLines.push(raw[i]);
+  var STOP=/^(macros?|nutrition|original creator|recipe by|comment\b)|\b(calories|kcal)\b|^per\s+\w+|\b1\s*(of|out of)\s*\d|#\w/i;
+  for(i=from;i<to;i++){
+    if(STOP.test(raw[i]))break;
+    ingLines.push(raw[i]);
+  }
   if(iStep>=0)for(i=iStep+1;i<raw.length;i++){
     l=raw[i];
     if(/^(macros?|nutrition|original creator)/i.test(l))break;
@@ -1434,6 +1457,7 @@ function parseRecipe(text){
     if(x.length>90)return;
     var g=parseIngLine(x);if(g)ings.push(g)});
   return{title:title,source:source,yield:findYield(raw),ingredients:ings,
+    ingredientsSrc:ingLines.join("\n"),
     stepsSrc:stepLines.join("\n"),steps:stepLines.map(convText).join("\n"),
     stated:mac.stated,statedBasis:mac.basis,servings:mac.servings,svKnown:mac.svKnown!==false,
     raw:raw.join("\n")};
@@ -1589,6 +1613,7 @@ var PROMPT='You extract a recipe from a screenshot of a social media post.\n'+
 'Return ONLY valid JSON, no markdown, matching exactly:\n'+
 '{"title":"recipe name in Hebrew","source":"author handle or empty string","yield":"what the post says it makes, in Hebrew, e.g. 18 רולים / 6 מנות",'+
 '"ingredients":[{"name":"generic ingredient name in Hebrew","grams":grams used in the WHOLE recipe,"k":kcal,"p":protein g,"c":carbs g,"f":fat g,"s":saturated fat g,"b":fiber g}],'+
+'"ingredientsOriginal":["ingredient line exactly as written in the post, original language and units, unchanged"],'+
 '"steps":["step in Hebrew"],"stepsOriginal":["step exactly as written in the post, original language, unchanged"],'+
 '"stated":{"k":num,"p":num,"c":num,"f":num} or null,'+
 '"statedBasis":"total" if the posted macros cover the whole recipe, or "serving" if they are per one serving,'+
@@ -1651,7 +1676,7 @@ function runOcr(files){
     var r=parseRecipe(text);
     var e=blank();
     e.title=r.title||"";e.source=r.source||"";e.yield=r.yield||"";
-    e.ingredients=r.ingredients;
+    e.ingredients=r.ingredients;e.ingredientsSrc=r.ingredientsSrc||"";
     e.stepsSrc=r.stepsSrc;e.steps=r.steps;
     e.stated=r.stated;e.statedBasis=r.statedBasis;e.servings=r.servings||1;e.svKnown=r.svKnown!==false;
     e.note="";
@@ -1679,6 +1704,7 @@ picker.onchange=function(ev){
     e.ingredients=(r.ingredients||[]).map(buildIngredient);
     e.steps=(r.steps||[]).join("\n");
     e.stepsSrc=Array.isArray(r.stepsOriginal)?r.stepsOriginal.join("\n"):"";
+    e.ingredientsSrc=Array.isArray(r.ingredientsOriginal)?r.ingredientsOriginal.join("\n"):"";
     e.note=r.note||"";
     if(r.stated&&r.stated.k){
       e.stated=plausibleMacros({k:+r.stated.k,p:+r.stated.p||0,
