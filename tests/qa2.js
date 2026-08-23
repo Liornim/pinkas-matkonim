@@ -33,7 +33,7 @@ new Function("X",code+`;Object.assign(X,{parseRecipe,parseIngLine,parseQty,unitG
  ingTotals,recipeTotals,amountLabel,matchFood,sanitizeRecipe,offNorm,offSearch,applyOff,
  esc,r1,r0,num,foods,DB,blank,recipeBytes,hasHebrew,needsTranslation,translateSteps,VOL_G,
  setIng:v=>{ingEdit=v},getIng:()=>ingEdit,setKey:k=>{apiKey=k},saveIng:saveIngredient,
- setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros});`)(X);
+ setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros});`)(X);
 
 /* ============================================================
    ארבעת הכיתובים האמיתיים
@@ -516,6 +516,30 @@ X.offSearch(BARCODE).then(list=>{
   ok("בסיס נשמר",sane.statedBasis==="serving");
   ok("מנות מוגבלות ל-999",X.sanitizeRecipe({id:"s2",servings:99999}).servings===999);
   ok("בסיס לא חוקי → total",X.sanitizeRecipe({id:"s3",statedBasis:"<script>"}).statedBasis==="total");
+  
+  
+
+  sec("סבירות ערכי מאקרו");
+  const bug=X.grabMacros("332 Calories 420g Protein");
+  ok("הבאג שדווח: 420 → 42",bug.p===42,bug.p);
+  ok("קלוריות לא השתנו",bug.k===332);
+  ok("התיקון מסומן",bug.fixed===true);
+  const good=X.grabMacros("332 Calories 42g Protein 20g Carbs 8g Fat");
+  ok("ערכים תקינים לא משתנים",good.p===42&&good.c===20&&good.f===8);
+  ok("ערכים תקינים לא מסומנים כמתוקנים",!good.fixed);
+  ok("אבקת חלבון 80 גר' על 380 קל תקין",X.grabMacros("380 Calories 80g Protein").p===80);
+  ok("פחמימות 30 על 100 קל תקין",X.grabMacros("100 cal 30g carbs").c===30);
+  ok("שומן 40 על 780 קל תקין",X.grabMacros("780 Calories 40g Fat").f===40);
+  ok("שומן מנופח 400 → 40",X.grabMacros("780 Calories 400g Fat").f===40);
+  ok("מתכון שלם: 259 חלבון על 2563 קל תקין",X.plausibleMacros({k:2563,p:259,c:160,f:94}).p===259);
+  ok("מספר בתוך מספר ארוך לא נלכד",X.grabMacros("Recipe 3420 400 Calories 42g Protein").p===42,
+     X.grabMacros("Recipe 3420 400 Calories 42g Protein").p);
+  ok("קלוריות נמוכות מדי נדחות",X.grabMacros("5 calories 1g protein")===null);
+  ok("שורה בלי קלוריות מוחזרת null",X.grabMacros("42g protein 20g carbs")===null);
+  ok("ערכים עשרוניים נקראים",X.grabMacros("332 Calories 42.5g Protein").p===42.5);
+  ok("kcal מזוהה",X.grabMacros("332 kcal 42g protein").k===332);
+  ok("חלבון אפס לא מתחלק",X.plausibleMacros({k:100,p:0,c:0,f:0}).p===0);
+  ok("k אפס לא מפיל",X.plausibleMacros({k:0,p:99,c:0,f:0}).p===99);
   
   
   console.log("\n"+"═".repeat(40));
