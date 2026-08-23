@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.0.8">
+<meta name="app-version" content="1.0.9">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.0.8</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.0.9</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -197,7 +197,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.0.8";
+var APP_VERSION="1.0.9";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -351,6 +351,7 @@ function translateSteps(e,srcText){
 }
 function go(v){view=v;err="";render()}
 back.onclick=function(){
+  if(view==="settings"){saveSettings();go("list");return}
   if(view==="ingredient"){ingEdit=null;go("edit");return}
   if(view==="edit"&&!confirm("לצאת בלי לשמור?"))return;
   editing=null;reviewMode=false;go("list")};
@@ -523,7 +524,10 @@ function drawDock(){
   }else if(view==="ingredient"){
     dock.innerHTML='<button class="btn" id="d1">שמירת המרכיב</button>';
     el("d1").onclick=saveIngredient;
-  }else if(view==="settings"||view==="detail"){
+  }else if(view==="settings"){
+    dock.innerHTML='<button class="btn" id="d1">שמירה וחזרה למתכונים</button>';
+    el("d1").onclick=function(){saveSettings();go("list")};
+  }else if(view==="detail"){
     dock.innerHTML='<button class="btn" id="d1">חזרה למתכונים</button>';
     el("d1").onclick=function(){go("list")};
   }else{
@@ -1598,6 +1602,11 @@ function drawSettings(){
   '<div class="note">סטטוס "לא יצאה מהמכשיר" פירושו שהדפדפן חסם את הבקשה לפני שהגיעה לשרת. הסיבה הנפוצה היא פתיחת הקובץ דרך נתיב פנימי (content:// או דרך אפליקציית הורדות) במקום מכתובת https.</div>'+
   '<div class="note" style="text-align:center">פנקס מתכונים · גרסה '+APP_VERSION+'</div>'+
   '</div>';
+
+  if(el("ol"))el("ol").onchange=function(v){
+    ocrLang=v.target.value||"eng";write(K_OCR,ocrLang);drawSettings()};
+  if(el("po"))el("po").onchange=function(v){
+    preferOcr=!!v.target.checked;write(K_PREF,preferOcr);drawSettings()};
 
   if(el("lm"))el("lm").onclick=function(){
     var k=el("ak").value.trim();
