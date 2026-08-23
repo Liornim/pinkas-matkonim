@@ -542,6 +542,62 @@ X.offSearch(BARCODE).then(list=>{
   ok("k אפס לא מפיל",X.plausibleMacros({k:0,p:99,c:0,f:0}).p===99);
   
   
+
+  sec("Banana Bread — מאקרו בשורות נפרדות + תווי כיוון");
+  const RB=`Protein Banana Bread
+  Ingredients:
+  \u2022 250g ripe banana
+  \u2022 3 eggs
+  \u2022 200g oat flour
+  \u2022 1 tsp cinnamon
+  Directions:
+  1. Mash the banana and mix everything.
+  2. Bake at 350F for 40 minutes.
+  I sliced mine into 10 pieces, so you've got breakfast, a snack or dessert sorted for the week.
+  Per Slice (1 of 10):
+  143 Calories
+  7g Protein
+  9g Fat
+  8g Carbs`;
+  const PB=X.parseRecipe(RB),NB=X.recipeNumbers(PB);
+  ok("מאקרו נאסף משורות נפרדות",PB.stated&&PB.stated.k===143,JSON.stringify(PB.stated));
+  ok("חלבון 7",PB.stated.p===7,PB.stated.p);
+  ok("פחמימות 8",PB.stated.c===8,PB.stated.c);
+  ok("שומן 9",PB.stated.f===9,PB.stated.f);
+  ok("בסיס: למנה",PB.statedBasis==="serving",PB.statedBasis);
+  ok("'1 of 10' → 10 מנות",PB.servings===10,PB.servings);
+  ok("מספר המנות ידוע",PB.svKnown===true);
+  ok("כל המתכון 1430",NB.total.k===1430,NB.total.k);
+  ok("חלבון לכל המתכון 70",NB.total.p===70,NB.total.p);
+  ok("למנה נשאר 143",NB.per.k===143,NB.per.k);
+  ok("לא מסומן כלא ידוע",NB.unknown===false);
+  ok("לא נופל לחישוב המרכיבים",NB.fromRecipe===true);
+  const ban=PB.ingredients.find(i=>i.name.indexOf("בננה")===0);
+  ok("250g בננה = 250 גרם",ban.qty===250,ban.qty);
+  ok("בננה לא קיבלה משקל יחידה (115)",ban.qty!==115);
+  ok("3 ביצים = 150 גרם",PB.ingredients.find(i=>i.name.indexOf("ביצה")===0).qty===150);
+  ok("200g קמח = 200 גרם",PB.ingredients.find(i=>i.name.indexOf("קמח")===0).qty===200);
+  
+  sec("תווי כיוון נסתרים");
+  const bidiLine=X.parseIngLine("\u200e250g ripe banana\u200f");
+  ok("LRM בתחילת שורה לא שובר כמות",bidiLine.qty===250,bidiLine.qty);
+  ok("יחידה זוהתה כגרם",bidiLine.unitName==="גרם");
+  const rtlEmbed=X.parseIngLine("\u202b\u2022 100g flour\u202c");
+  ok("תווי הטמעה דו-כיווניים מנוקים",rtlEmbed.qty===100,rtlEmbed.qty);
+  ok("רווח אפס מנוקה",X.parseIngLine("\u200b50g sugar").qty===50);
+  ok("תבליט em-dash מנוקה",X.parseIngLine("— 75g oats").qty===75);
+  
+  sec("וריאציות ניסוח של מנות");
+  const mk=(txt)=>X.parseMacros(txt.split("\n"));
+  ok("'Per slice' מזוהה כלמנה",mk("Per slice\n100 Calories\n5g Protein").basis==="serving");
+  ok("'Makes 12 muffins'",mk("Makes 12 muffins\n200 Calories\n9g Protein").servings===12);
+  ok("'Cut into 8 squares'",mk("Cut into 8 squares\n150 Calories\n5g Protein").servings===8);
+  ok("'Serves 4'",mk("Serves 4\n300 Calories\n20g Protein").servings===4);
+  ok("בלי רמז → מנה אחת",mk("300 Calories\n20g Protein").servings===1);
+  ok("בלי רמז → בסיס סך הכל",mk("300 Calories\n20g Protein").basis==="total");
+  ok("שורת קלוריות בלי מאקרו אחר נדחית",mk("Bake 350 calories free").stated===null);
+  
+  
   console.log("\n"+"═".repeat(40));
   console.log("  עברו: "+PASS+"    נכשלו: "+FAIL);
   console.log("═".repeat(40));
