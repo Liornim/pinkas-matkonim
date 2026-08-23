@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.0.7">
+<meta name="app-version" content="1.0.8">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.0.7</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.0.8</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -185,11 +185,19 @@ var DB=[
 {n:"תפוחי אדמה מגוררים",k:82,p:1.9,c:18,f:0.2,s:0,b:1.6,u:{"כוס":140}},
 {n:"אבקת מרק עוף",k:237,p:11,c:24,f:11,s:5,b:0,u:{"כפית":3}},
 {n:"שמן צ'ילי",k:884,p:0,c:0,f:100,s:15,b:0,u:{"כף":14,"כפית":4.5}},
-{n:"תערובת אברת'ינג בייגל",k:400,p:14,c:20,f:29,s:3,b:11,u:{"כפית":3}}
+{n:"תערובת אברת'ינג בייגל",k:400,p:14,c:20,f:29,s:3,b:11,u:{"כפית":3}},
+{n:"אבקת קקאו",k:228,p:19.6,c:58,f:13.7,s:8,b:33,u:{"כף":5,"כוס":86}},
+{n:"גרנולת חלבון",k:400,p:20,c:50,f:12,s:2,b:7,u:{"כוס":110}},
+{n:"סירופ מייפל ללא סוכר",k:40,p:0,c:10,f:0,s:0,b:0,u:{"כף":15}},
+{n:"שוקולד צ'יפס ללא סוכר",k:500,p:5,c:55,f:32,s:20,b:20,u:{"כף":12}},
+{n:"תמצית וניל",k:288,p:0,c:12.7,f:0,s:0,b:0,u:{"כפית":4.2}},
+{n:"אבקת אפייה",k:53,p:0,c:28,f:0,s:0,b:0.2,u:{"כפית":4.6}},
+{n:"סודה לשתייה",k:0,p:0,c:0,f:0,s:0,b:0,u:{"כפית":4.6}},
+{n:"סירופ מייפל",k:260,p:0,c:67,f:0,s:0,b:0,u:{"כף":20}}
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.0.7";
+var APP_VERSION="1.0.8";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -204,7 +212,7 @@ var BUILTIN_PID="recipe-book-d7246";
 var BUILTIN_KEY="AIzaSyDbdUNxeCUzH9UB1XwQWPp85zSTFZXfhCs";
 var projectId=read(K_PID,"")||BUILTIN_PID, fbKey=read(K_FKEY,"")||BUILTIN_KEY, myName=read(K_NAME,"");
 var K_OCR="ocr-lang-v1",K_PREF="prefer-ocr-v1";
-var ocrLang=read(K_OCR,"eng+heb"),preferOcr=read(K_PREF,false);
+var ocrLang=read(K_OCR,"eng"),preferOcr=read(K_PREF,false);
 function useOcr(){return !apiKey||preferOcr}
 function cloudOn(){return !!(projectId&&fbKey)}
 function foods(){return DB.concat(customFoods)}
@@ -1209,6 +1217,14 @@ var ALIAS=[
  ["arugula","רוקט"],["rocket","רוקט"],["hash brown","תפוחי אדמה מגוררים"],
  ["bouillon","אבקת מרק עוף"],["chili garlic oil","שמן צ'ילי"],["chili oil","שמן צ'ילי"],
  ["everything bagel","תערובת אברת'ינג בייגל"],
+ ["cocoa powder","אבקת קקאו"],["cacao","אבקת קקאו"],["cocoa","אבקת קקאו"],
+ ["protein granola","גרנולת חלבון"],["granola","גרנולת חלבון"],
+ ["sugar free maple syrup","סירופ מייפל ללא סוכר"],["maple syrup","סירופ מייפל"],
+ ["sugar free choc chips","שוקולד צ'יפס ללא סוכר"],["sugar free chocolate chips","שוקולד צ'יפס ללא סוכר"],
+ ["choc chips","שוקולד צ'יפס ללא סוכר"],["chocolate chips","שוקולד צ'יפס ללא סוכר"],
+ ["vanilla extract","תמצית וניל"],["vanilla","תמצית וניל"],
+ ["baking powder","אבקת אפייה"],["baking soda","סודה לשתייה"],
+ ["almond flour","שקדים"],["oat flour","שיבולת שועל"],
  ["seasoning","מלח ותבלינים"],["powder","מלח ותבלינים"],["paprika","מלח ותבלינים"]
 ];
 function aliasFood(name){
@@ -1255,11 +1271,26 @@ function unitGrams(food,he){
   for(i=0;i<ks.length;i++)if(ks[i].indexOf(he)===0||ks[i].indexOf(he)>=0)return food.u[ks[i]];
   return 0;
 }
+/* מנוע OCR שרץ בהקשר עברי הופך שורות לטיניות: המספר עובר לסוף,
+   והתבליט נדחק אחריו. בנוסף האות g נקראת לעיתים כספרה 0. */
+var BULLET_END=/[\*\u2022\u00b7\u25cf\u25e6\u00bb\u00ab\u2039\u203a\u2043\+]+\s*$/;
+function unbidiLine(s){
+  var t=String(s).replace(BULLET_END,"").trim();
+  var m=t.match(/^([A-Za-z][\s\S]*?[A-Za-z\)])\s+(\d+(?:[.,]\d+)?)\s*(g|gr|kg|ml|l|oz|lb|lbs|tsp|tbsp|cups?)?$/i);
+  if(!m)return{line:t,est:false};
+  var rest=m[1],numTxt=m[2],unit=m[3]||"",est=false;
+  /* מספר בן שלוש ספרות ומעלה שמסתיים באפס, בלי יחידה — כמעט תמיד "g" שנקראה כ-0 */
+  if(!unit&&/^\d{2,}0$/.test(numTxt)){numTxt=numTxt.slice(0,-1);unit="g";est=true}
+  return{line:(numTxt+unit+" "+rest).trim(),est:est};
+}
 function parseIngLine(line){
   var s=String(line)
     .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069\u200b-\u200d\ufeff]/g,"")
-    .replace(/^[\s\*\-–—•●·◦o▪️▫︎+>]+/,"")
+    .replace(/^[\s\*\-–—•●·◦o▪️▫︎+>«»]+/,"")
     .trim();
+  if(!s)return null;
+  var fix=unbidiLine(s),estFlag=fix.est;
+  s=fix.line;
   if(!s)return null;
   var pq=parseQty(s),qty=pq.q,rest=pq.rest.trim(),unit=null,i;
   if(/^handful/i.test(rest)){qty=qty||1;unit={he:"חופן",g:0};rest=rest.replace(/^handful\s*(of)?\s*/i,"")}
@@ -1272,14 +1303,14 @@ function parseIngLine(line){
   var ing={name:name,src:food?"db":"manual",per:per};
 
   /* יחידת משקל ישירה */
-  if(unit&&unit.g>0&&qty){ing.basis="100g";ing.unitName="גרם";ing.qty=r1(qty*unit.g);return ing}
+  if(unit&&unit.g>0&&qty){ing.basis="100g";ing.unitName="גרם";ing.qty=r1(qty*unit.g);if(estFlag)ing.est=true;return ing}
 
   /* יחידת נפח — משקל ספציפי למרכיב, ואם אין אז הערכה כללית */
   if(unit&&qty){
     var g=unitGrams(food,unit.he);
-    if(g>0){ing.basis="100g";ing.unitName="גרם";ing.qty=r1(qty*g);return ing}
+    if(g>0){ing.basis="100g";ing.unitName="גרם";ing.qty=r1(qty*g);if(estFlag)ing.est=true;return ing}
     if(food&&VOL_G[unit.he]){ing.basis="100g";ing.unitName="גרם";
-      ing.qty=r1(qty*VOL_G[unit.he]);ing.est=true;return ing}
+      ing.qty=r1(qty*VOL_G[unit.he]);ing.est=true;if(estFlag)ing.est=true;return ing}
     ing.basis="unit";ing.unitName=unit.he;ing.qty=qty;
     if(!food){ing.per={k:0,p:0,c:0,f:0,s:0,b:0};ing.src="manual"}
     else{ing.est=true}
@@ -1288,10 +1319,11 @@ function parseIngLine(line){
 
   /* בלי יחידה */
   if(food&&food.u){var uk=Object.keys(food.u)[0];
-    ing.basis="100g";ing.unitName="גרם";ing.qty=r1((qty||1)*food.u[uk]);return ing}
-  if(food&&qty){ing.basis="100g";ing.unitName="גרם";ing.qty=r1(qty*100);ing.est=true;return ing}
-  if(food){ing.basis="unit";ing.unitName="יחידה";ing.qty=1;ing.est=true;return ing}
+    ing.basis="100g";ing.unitName="גרם";ing.qty=r1((qty||1)*food.u[uk]);if(estFlag)ing.est=true;return ing}
+  if(food&&qty){ing.basis="100g";ing.unitName="גרם";ing.qty=r1(qty*100);ing.est=true;if(estFlag)ing.est=true;return ing}
+  if(food){ing.basis="unit";ing.unitName="יחידה";ing.qty=1;ing.est=true;if(estFlag)ing.est=true;return ing}
   ing.basis="unit";ing.unitName="יחידה";ing.qty=qty||1;
+  if(estFlag)ing.est=true;
   return ing;
 }
 var NOISE=/^(reels?|סרטוני|explore|for you|follow|following|liked by|view (all|translation)|show (more|less)|הצגת התרגום|השב|reply|comment|share|save|original (audio|creator)|add a comment|הוסף תגובה|הצטפות|\d+[wdhm]|\d{1,2}:\d{2}|likes?|views?)$/i;
@@ -1495,7 +1527,7 @@ function saveSettings(){
   if(el("nm"))myName=el("nm").value.trim();
   if(el("pid"))projectId=el("pid").value.trim()||BUILTIN_PID;
   if(el("fk"))fbKey=el("fk").value.trim()||BUILTIN_KEY;
-  if(el("ol"))ocrLang=el("ol").value||"eng+heb";
+  if(el("ol"))ocrLang=el("ol").value||"eng";
   if(el("po"))preferOcr=!!el("po").checked;
   write(K_KEY,apiKey);write(K_MODEL,model);
   write(K_NAME,myName);write(K_PID,projectId);write(K_FKEY,fbKey);
@@ -1511,15 +1543,16 @@ function drawSettings(){
   '<div class="tiny" style="line-height:1.7">מנוע קריאת טקסט שרץ על המכשיר שלך. בלי מפתח, בלי מכסה, בלי עלות. הפירוק לרשימת מרכיבים ושלבים נעשה בקוד. בפעם הראשונה נדרשת הורדה חד־פעמית של המנוע.</div>'+
   '<label for="ol">שפות לזיהוי</label>'+
   '<select id="ol">'+
-    '<option value="eng"'+(ocrLang==="eng"?" selected":"")+'>אנגלית בלבד (מהיר)</option>'+
+    '<option value="eng"'+(ocrLang==="eng"?" selected":"")+'>אנגלית בלבד (מומלץ)</option>'+
     '<option value="heb"'+(ocrLang==="heb"?" selected":"")+'>עברית בלבד</option>'+
-    '<option value="eng+heb"'+(ocrLang==="eng+heb"?" selected":"")+'>אנגלית ועברית</option>'+
+    '<option value="eng+heb"'+(ocrLang==="eng+heb"?" selected":"")+'>אנגלית ועברית (איטי, עלול להפוך שורות)</option>'+
   '</select>'+
   '<label style="display:flex;gap:9px;align-items:center;margin-top:16px;color:var(--ink);font-size:14px">'+
   '<input type="checkbox" id="po" '+(preferOcr?"checked":"")+' style="width:18px;height:18px;flex:0 0 auto">'+
   'העדף קריאה מקומית גם כשיש מפתח AI</label>'+
   '<div class="tiny">'+(useOcr()?"כרגע הקריאה מתבצעת מקומית.":"כרגע הקריאה מתבצעת דרך המודל, שגם מתרגם לעברית.")+'</div>'+
-  '<div class="note">קריאה מקומית מוציאה את הטקסט כמו שהוא — היא לא מתרגמת לעברית ולא משלימה ערכים תזונתיים חסרים. את הערכים משלימים מהמאגר המקומי או ממאגר המוצרים.</div></div>'+
+  '<div class="note">קריאה מקומית מוציאה את הטקסט כמו שהוא — היא לא מתרגמת לעברית ולא משלימה ערכים תזונתיים חסרים.</div>'+
+  '<div class="note">בחירת אנגלית ועברית יחד גורמת למנוע לסדר שורות לטיניות מימין לשמאל, והמספרים עוברים לסוף השורה. האפליקציה יודעת לשקם את זה, אבל למתכון באנגלית עדיף לבחור אנגלית בלבד.</div></div>'+
 
   '<div class="sec"><h3>קריאת מתכון בעזרת AI</h3>'+
   '<div class="tiny" style="line-height:1.7">נדרש מפתח API של Google AI Studio. חינמי, בלי כרטיס אשראי, נשמר רק במכשיר הזה.</div>'+
