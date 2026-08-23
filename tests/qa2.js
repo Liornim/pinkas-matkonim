@@ -33,7 +33,7 @@ new Function("X",code+`;Object.assign(X,{parseRecipe,parseIngLine,parseQty,unitG
  ingTotals,recipeTotals,amountLabel,matchFood,sanitizeRecipe,offNorm,offSearch,applyOff,
  esc,r1,r0,num,foods,DB,blank,recipeBytes,hasHebrew,needsTranslation,translateSteps,VOL_G,
  setIng:v=>{ingEdit=v},getIng:()=>ingEdit,setKey:k=>{apiKey=k},saveIng:saveIngredient,
- setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros});`)(X);
+ setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine});`)(X);
 
 /* ============================================================
    ארבעת הכיתובים האמיתיים
@@ -576,7 +576,7 @@ X.offSearch(BARCODE).then(list=>{
   ok("250g בננה = 250 גרם",ban.qty===250,ban.qty);
   ok("בננה לא קיבלה משקל יחידה (115)",ban.qty!==115);
   ok("3 ביצים = 150 גרם",PB.ingredients.find(i=>i.name.indexOf("ביצה")===0).qty===150);
-  ok("200g קמח = 200 גרם",PB.ingredients.find(i=>i.name.indexOf("קמח")===0).qty===200);
+  ok("200g שיבולת שועל = 200 גרם",PB.ingredients.find(i=>/שיבולת/.test(i.name)).qty===200);
   
   sec("תווי כיוון נסתרים");
   const bidiLine=X.parseIngLine("\u200e250g ripe banana\u200f");
@@ -631,6 +631,41 @@ X.offSearch(BARCODE).then(list=>{
   ok("האשטג עוצר",stop("#weightloss")===1);
   ok("'1 of 8' עוצר",stop("1 of 8 slices")===1);
   ok("ספריי אפס קלוריות לא עוצר",X.parseRecipe("T\nIngredients:\n* 100g flour\n* Zero-calorie cooking spray").ingredients.length===2);
+  
+  
+
+  sec("שיקום שורות שה-OCR הפך (הבאג שדווח)");
+  const OCR=["ripe banana 2500 *","whole eggs 3 *","115g almond flour","cocoa powder 300 \u00bb",
+   "30g sugar free maple syrup *","tsp vanilla extract 1 \u00ab","sugar free choc chips 200 *",
+   "high protein granola (for the topping) 200 +","Pinch of salt *",
+   "1tsp baking soda or baking powder (either works) \u00ab"];
+  const G=OCR.map(l=>X.parseIngLine(l));
+  ok("כל עשר השורות נקלטו",G.every(Boolean),G.filter(Boolean).length);
+  ok("בננה 250 גרם (היה 115)",G[0].qty===250,G[0].qty);
+  ok("בננה מסומנת כמוערכת",G[0].est===true);
+  ok("3 ביצים = 150 גרם",G[1].qty===150,G[1].qty);
+  ok("115g שקדים ללא שינוי",G[2].qty===115,G[2].qty);
+  ok("קקאו 300 → 30 גרם",G[3].qty===30,G[3].qty);
+  ok("קקאו זוהה ולא כתבלין",/קקאו/.test(G[3].name),G[3].name);
+  ok("מייפל 30 גרם",G[4].qty===30,G[4].qty);
+  ok("וניל 1 כפית",Math.abs(G[5].qty-4.2)<0.1,G[5].qty);
+  ok("שוקולד צ'יפס 200 → 20 גרם",G[6].qty===20,G[6].qty);
+  ok("גרנולה 200 → 20 גרם",G[7].qty===20,G[7].qty);
+  ok("גרנולה עם ערכים",X.ingTotals(G[7]).k>0,X.ingTotals(G[7]).k);
+  ok("קמצוץ מלח לא מפיל",G[8]!==null);
+  ok("אבקת אפייה זוהתה",/אפייה/.test(G[9].name),G[9].name);
+  ok("אין מרכיב עם כמות אפס",G.every(g=>g.qty>0));
+  ok("סה\"כ סביר למתכון",Math.round(G.reduce((t,g)=>t+X.ingTotals(g).k,0))>900,
+     Math.round(G.reduce((t,g)=>t+X.ingTotals(g).k,0)));
+  
+  sec("שיקום — מקרי קצה");
+  ok("שורה תקינה לא משתנה",X.parseIngLine("250g ripe banana").qty===250);
+  ok("2 ספרות לא מתוקנות",X.unbidiLine("eggs 20 *").line==="20 eggs"&&X.unbidiLine("eggs 20 *").est===false,X.unbidiLine("eggs 20 *").line);
+  ok("3 ספרות מתוקנות ל-g",X.unbidiLine("cocoa powder 300 *").line==="30g cocoa powder",X.unbidiLine("cocoa powder 300 *").line);
+  ok("מספר עם יחידה מפורשת לא מתוקן",X.unbidiLine("milk 200 ml *").line==="200ml milk",X.unbidiLine("milk 200 ml *").line);
+  ok("100 → 10g",X.unbidiLine("flour 100 *").line==="10g flour",X.unbidiLine("flour 100 *").line);
+  ok("בלי מספר בסוף לא זז",/almond/.test(X.parseIngLine("almond flour").name));
+  ok("תבליט בסוף בלבד",X.parseIngLine("Pinch of salt *")!==null);
   
   
   console.log("\n"+"═".repeat(40));
