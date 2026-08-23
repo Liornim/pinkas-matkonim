@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.0.4">
+<meta name="app-version" content="1.0.5">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.0.4</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.0.5</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -189,7 +189,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.0.4";
+var APP_VERSION="1.0.5";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -424,8 +424,11 @@ function sanitizeRecipe(o){
       est:!!(i&&i.est),
       per:{k:n0(p.k),p:n0(p.p),c:n0(p.c),f:n0(p.f),s:n0(p.s),b:n0(p.b)}};
   });
-  if(o.stated&&typeof o.stated==="object")
-    r.stated={k:n0(o.stated.k),p:n0(o.stated.p),c:n0(o.stated.c),f:n0(o.stated.f)};
+  if(o.stated&&typeof o.stated==="object"){
+    r.stated=plausibleMacros({k:n0(o.stated.k),p:n0(o.stated.p),
+      c:n0(o.stated.c),f:n0(o.stated.f)});
+    delete r.stated.fixed;delete r.stated.complete;
+  }
   return r;
 }
 
@@ -473,6 +476,24 @@ function syncNow(){
     return Promise.all(pushes.map(cloudPut));
   }).then(function(){syncMsg="";lastSync=Date.now();err="";render()})
    .catch(function(e){syncMsg="";err="הסנכרון נכשל: "+e.message;render()});
+}
+
+/* תיקון מתכונים שכבר נשמרו עם ערכי מאקרו בלתי אפשריים */
+function repairSaved(){
+  var changed=[];
+  recipes.forEach(function(r){
+    if(!r.stated||!(Number(r.stated.k)>0))return;
+    var before=JSON.stringify([r.stated.p,r.stated.c,r.stated.f]);
+    var fixed=plausibleMacros({k:Number(r.stated.k),p:Number(r.stated.p)||0,
+      c:Number(r.stated.c)||0,f:Number(r.stated.f)||0});
+    delete fixed.fixed;delete fixed.complete;
+    if(JSON.stringify([fixed.p,fixed.c,fixed.f])!==before){
+      r.stated=fixed;r.updated=Date.now();changed.push(r);
+    }
+  });
+  if(!changed.length)return;
+  saveRecipes();
+  if(cloudOn())changed.forEach(function(r){cloudPut(r).catch(function(){})});
 }
 
 /* ============ ציור ============ */
@@ -1767,8 +1788,9 @@ document.addEventListener("keydown",function(ev){
   openId=card.dataset.open;go("detail");
 });
 
+repairSaved();
 render();
-if(cloudOn())syncNow();
+if(cloudOn())syncNow().then(repairSaved);
 </script>
 </body>
 </html>
