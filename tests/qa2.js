@@ -598,6 +598,41 @@ X.offSearch(BARCODE).then(list=>{
   ok("שורת קלוריות בלי מאקרו אחר נדחית",mk("Bake 350 calories free").stated===null);
   
   
+
+  sec("שדה המרכיבים המקורי");
+  const RS=`banana bread recipes
+  Ingredients:
+  * 250g ripe banana
+  * 3 whole eggs
+  * 115g almond flour
+  Per Slice (1 of 10):
+  143 Calories
+  7g Protein`;
+  const PS=X.parseRecipe(RS);
+  ok("הטקסט המקורי נשמר",PS.ingredientsSrc.indexOf("250g ripe banana")>=0);
+  ok("שלוש שורות בלבד",PS.ingredientsSrc.split("\n").length===3,PS.ingredientsSrc.split("\n").length);
+  ok("שורות מאקרו לא נכנסו לטקסט",PS.ingredientsSrc.indexOf("Calories")<0);
+  ok("שורות מאקרו לא נכנסו למרכיבים",PS.ingredients.length===3,PS.ingredients.length);
+  ok("'Per Slice' לא הפך למרכיב",!PS.ingredients.some(i=>/Per Slice/i.test(i.name)));
+  ok("115g שקד = 115 גרם",PS.ingredients[2].qty===115,PS.ingredients[2].qty);
+  ok("מתכון חדש כולל את השדה",X.blank().ingredientsSrc==="");
+  ok("השדה עובר ניקוי",X.sanitizeRecipe({id:"x",ingredientsSrc:"* 250g banana"}).ingredientsSrc==="* 250g banana");
+  ok("HTML בשדה מנוטרל בהצגה",!/<img/.test(X.esc(X.sanitizeRecipe({id:"y",ingredientsSrc:"<img src=x onerror=1>"}).ingredientsSrc)));
+  ok("מתכון ישן בלי השדה לא קורס",X.sanitizeRecipe({id:"z"}).ingredientsSrc==="");
+  const long=X.sanitizeRecipe({id:"w",ingredientsSrc:"x".repeat(9000)});
+  ok("אורך מוגבל",long.ingredientsSrc.length<=4000,long.ingredientsSrc.length);
+  
+  sec("גבול בין מרכיבים למאקרו");
+  const stop=(t)=>X.parseRecipe("T\nIngredients:\n* 100g flour\n"+t).ingredients.length;
+  ok("'Macros' עוצר",stop("Macros\n200 Calories")===1);
+  ok("'Nutrition' עוצר",stop("Nutrition\n200 Calories")===1);
+  ok("'Original Creator' עוצר",stop("Original Creator : @x")===1);
+  ok("שורת קלוריות עוצרת",stop("300 Calories")===1);
+  ok("האשטג עוצר",stop("#weightloss")===1);
+  ok("'1 of 8' עוצר",stop("1 of 8 slices")===1);
+  ok("ספריי אפס קלוריות לא עוצר",X.parseRecipe("T\nIngredients:\n* 100g flour\n* Zero-calorie cooking spray").ingredients.length===2);
+  
+  
   console.log("\n"+"═".repeat(40));
   console.log("  עברו: "+PASS+"    נכשלו: "+FAIL);
   console.log("═".repeat(40));
