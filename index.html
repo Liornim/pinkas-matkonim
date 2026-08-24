@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.0.9">
+<meta name="app-version" content="1.1.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.0.9</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.1.0</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -197,7 +197,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.0.9";
+var APP_VERSION="1.1.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -576,13 +576,15 @@ function drawList(){
           ? '<div class="tiny" style="margin-top:11px;font-weight:700">למנה אחת, לפי המתכון</div>'+
             macroRow(N.per)+
             '<div class="tiny" style="margin-top:8px;color:var(--accent)">המתכון לא ציין כמה מנות יוצאות — קבע זאת בעריכה כדי לראות סך הכל</div>'
-          : '<div class="tiny" style="margin-top:11px;font-weight:700">כל המתכון</div>'+
+          : '<div class="tiny" style="margin-top:11px;font-weight:700">כל המתכון'+
+            (N.fromRecipe?" · לפי המתכון":" · לפי חישוב המרכיבים")+'</div>'+
             macroRow(N.total)+
-            (N.servings>1?'<div class="tiny" style="margin-top:8px">למנה (מתוך '+N.servings+'): '+
-              r0(N.per.k)+' קל · '+r1(N.per.p)+' חלבון · '+r1(N.per.c)+' פחמ · '+r1(N.per.f)+' שומן</div>'
-             :'<div class="tiny" style="margin-top:8px">המתכון כולו הוא מנה אחת</div>'))+
-        '<div class="tiny">'+(N.fromRecipe?"לפי המתכון":"לפי חישוב המרכיבים")+
-        (r.yield?' · '+esc(r.yield):"")+(r.by?' · הוסיף '+esc(r.by):"")+'</div>'+
+            (N.servings>1
+              ? '<div class="tiny" style="margin-top:10px;font-weight:700">למנה אחת · '+N.servings+' מנות</div>'+
+                macroRow(N.per)
+              : '<div class="tiny" style="margin-top:8px">המתכון כולו הוא מנה אחת</div>'))+
+        '<div class="tiny">'+(r.yield?esc(r.yield):"")+
+        (r.by?(r.yield?" · ":"")+'הוסיף '+esc(r.by):"")+'</div>'+
         (u?'<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)">'+
           '<a class="link" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer nofollow">'+
           'פתיחת המקור · '+esc(shortUrl(u))+'</a></div>':"")+
@@ -1444,20 +1446,34 @@ function findYield(lines){
   }
   return "";
 }
+/* ניקוד מועמדים לכותרת: כותרת קצרה ומנוסחת ככותרת עדיפה על משפט מהתיאור */
+function titleScore(c){
+  var s=0,words=c.split(/\s+/).filter(Boolean),n=words.length;
+  if(/[.!?]$/.test(c))s-=4;
+  if(/\b(i|i've|i'm|ive|my|you|your|this|these|those|it|so|and|but|because)\b/i.test(c))s-=3;
+  if(/\b(made|tastes?|tasting|love|favourite|favorite|business|perfect|easily)\b/i.test(c))s-=2;
+  if(n>=2&&n<=8)s+=3; else if(n>12)s-=3;
+  if(c.length<=55)s+=2; else if(c.length>75)s-=2;
+  var caps=words.filter(function(w){return /^[A-Z\u0590-\u05FF]/.test(w)}).length;
+  if(n&&caps/n>=0.6)s+=3;
+  if(/\brecipes?\s*$/i.test(c))s-=1;
+  return s;
+}
 function findTitle(lines,limit,source){
-  var best="",i,c;
+  var best="",bestScore=-99,i,c;
   for(i=0;i<limit;i++){
     c=lines[i];
     if(!c||NOISE.test(c))continue;
     if(source&&c.toLowerCase()===source.toLowerCase())continue;
     if(/^[a-z0-9._]{3,30}$/.test(c))continue;
     if(/^(ingredients?|how to|directions|instructions|method|macros?|nutrition)/i.test(c))continue;
-    if(/(comment|dm me|link in bio|follow|save this|תגובה)/i.test(c))continue;
+    if(/(comment|dm me|link in bio|follow|save this|תגובה|מקור של)/i.test(c))continue;
     if(/^[\*\-•\d]/.test(c))continue;
     c=c.replace(/[#@]\S+/g,"").replace(/\s{2,}/g," ").trim();
     if(c.split(/\s+/).length<2)continue;
-    if(c.length<8||c.length>80)continue;
-    if(c.length>best.length)best=c;
+    if(c.length<8||c.length>90)continue;
+    var sc=titleScore(c);
+    if(sc>bestScore){bestScore=sc;best=c}
   }
   return best;
 }
@@ -1487,10 +1503,13 @@ function parseRecipe(text){
     stepLines.push(l.replace(/^\d+[\.\)]\s*/,""));
   }
   var mac=parseMacros(raw);
-  var ings=[];
+  var ings=[],seenLine={};
   ingLines.forEach(function(x){
     if(/^(macros?|nutrition|comment|follow)/i.test(x))return;
     if(x.length>90)return;
+    var key=x.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]/g,"");
+    if(!key||seenLine[key])return;
+    seenLine[key]=1;
     var g=parseIngLine(x);if(g)ings.push(g)});
   return{title:title,source:source,yield:findYield(raw),ingredients:ings,
     ingredientsSrc:ingLines.join("\n"),
