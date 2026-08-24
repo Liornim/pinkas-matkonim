@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.1.0">
+<meta name="app-version" content="1.2.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.1.0</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.2.0</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -197,7 +197,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.1.0";
+var APP_VERSION="1.2.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -1277,6 +1277,92 @@ function unitGrams(food,he){
   for(i=0;i<ks.length;i++)if(ks[i].indexOf(he)===0||ks[i].indexOf(he)>=0)return food.u[ks[i]];
   return 0;
 }
+/* ===== פירוק שורות בעברית ===== */
+var HE_FRAC={"שלושת רבעי":0.75,"שני שליש":2/3,"חצי":0.5,"רבע":0.25,"שליש":1/3};
+var HE_NUM={"אחד":1,"אחת":1,"שתי":2,"שני":2,"שניים":2,"שתיים":2,"שלושה":3,"שלוש":3,
+  "ארבעה":4,"ארבע":4,"חמישה":5,"חמש":5,"שישה":6,"שש":6,"שבעה":7,"שבע":7,
+  "שמונה":8,"תשעה":9,"תשע":9,"עשרה":10,"עשר":10};
+var HE_END="(?![\\u0590-\\u05FF])";
+function heUnit(alts,extra){return{re:new RegExp("^(?:"+alts+")"+HE_END),g:extra.g,he:extra.he}}
+var HE_UNITS=[
+  heUnit("קילוגרם|קילו|ק\"ג|קג",{g:1000}),
+  heUnit("גרמים|גרם|גר'|ג'|גר",{g:1}),
+  heUnit("ליטר",{g:1000}),
+  heUnit("מיליליטר|מ\"ל|מל",{g:1}),
+  heUnit("כוסות|כוס",{he:"כוס"}),
+  heUnit("כפות|כף",{he:"כף"}),
+  heUnit("כפיות|כפית",{he:"כפית"}),
+  heUnit("שיני|שן",{he:"שן"}),
+  heUnit("פרוסות|פרוסה",{he:"פרוסה"}),
+  heUnit("חופן|קמצוץ",{he:"חופן"})
+];
+var HE_ALIAS=[["תבלין","מלח ותבלינים"],["תבלינים","מלח ותבלינים"],["פלפל שחור","מלח ותבלינים"],
+  ["שמן זית","שמן זית"],["חזה עוף","חזה עוף"],["בצל","בצל"]];
+/* ציוד מטבח — לא מרכיב */
+var EQUIPMENT=/^(תבנית|סיר(?![\u0590-\u05FF])|סירים|מחבת|תנור|נייר אפייה|נייר אפיה|נייר כסף|כלי |מזלג|בלנדר|מעבד מזון|מקציף|אינגליש קייק|רשת |מסננת|קרש חיתוך|waffle maker|baking (sheet|dish|tray|paper)|parchment|foil|skillet|frying pan|oven\b|blender|food processor|air fryer|mixer\b)/i;
+
+function parseHeLine(s){
+  var qty=null,unit=null,i,m,k,keys;
+  keys=Object.keys(HE_FRAC);
+  for(i=0;i<keys.length;i++){k=keys[i];
+    if(s.indexOf(k+" ")===0){qty=HE_FRAC[k];s=s.slice(k.length).trim();break}}
+  if(qty===null){
+    m=s.match(/^(\d+(?:[.,]\d+)?)\s*/);
+    if(m){qty=Number(String(m[1]).replace(",","."));s=s.slice(m[0].length).trim()}
+    else{
+      keys=Object.keys(HE_NUM);
+      for(i=0;i<keys.length;i++){k=keys[i];
+        if(s.indexOf(k+" ")===0){qty=HE_NUM[k];s=s.slice(k.length).trim();break}}
+    }
+  }
+  for(i=0;i<HE_UNITS.length;i++){m=s.match(HE_UNITS[i].re);
+    if(m){unit=HE_UNITS[i];s=s.slice(m[0].length).trim();break}}
+  return{qty:qty,unit:unit,rest:s.replace(/^(של|ה)\s+/,"").trim()};
+}
+function heAliasFood(name){
+  var i,l=foods();
+  for(i=0;i<HE_ALIAS.length;i++)if(name.indexOf(HE_ALIAS[i][0])>=0){
+    for(var j=0;j<l.length;j++)if(l[j].n===HE_ALIAS[i][1])return l[j];
+  }
+  return null;
+}
+/* המאגר בנוי ביחיד, והמתכונים כתובים ברבים — מנסים גם צורות יחיד */
+function heVariants(name){
+  var out=[name],words=String(name).split(/\s+/),i,j,alts;
+  for(i=0;i<words.length;i++){
+    var w=words[i];alts=[];
+    if(/(ים|ות)$/.test(w)&&w.length>3)alts=[w.slice(0,-2)+"ה",w.slice(0,-2)];
+    for(j=0;j<alts.length;j++){var c=words.slice();c[i]=alts[j];out.push(c.join(" "))}
+  }
+  return out;
+}
+function heFindFood(name){
+  var v=heVariants(name),i,f;
+  for(i=0;i<v.length;i++){f=matchFood(v[i]);if(f)return f}
+  return heAliasFood(name);
+}
+function buildHeIngredient(line){
+  var p=parseHeLine(line);
+  if(!p.rest)return null;
+  var food=heFindFood(p.rest);
+  var per=food?{k:food.k,p:food.p,c:food.c,f:food.f,s:food.s||0,b:food.b||0}
+               :{k:0,p:0,c:0,f:0,s:0,b:0};
+  var ing={name:food?food.n+" — "+p.rest:p.rest,src:food?"db":"manual",per:per};
+  if(p.unit&&p.unit.g){ing.basis="100g";ing.unitName="גרם";ing.qty=r1((p.qty||1)*p.unit.g);return ing}
+  if(p.unit){
+    var g=unitGrams(food,p.unit.he)||VOL_G[p.unit.he]||0;
+    if(g){ing.basis="100g";ing.unitName="גרם";ing.qty=r1((p.qty||1)*g);
+      if(!unitGrams(food,p.unit.he))ing.est=true;return ing}
+    ing.basis="unit";ing.unitName=p.unit.he;ing.qty=p.qty||1;return ing;
+  }
+  if(food&&food.u){var uk=Object.keys(food.u)[0];
+    ing.basis="100g";ing.unitName="גרם";ing.qty=r1((p.qty||1)*food.u[uk]);return ing}
+  /* תבלינים ודומיהם: יחידה אחת, לא 100 גרם */
+  if(food&&!food.k){ing.basis="unit";ing.unitName="יחידה";ing.qty=p.qty||1;return ing}
+  if(food){ing.basis="100g";ing.unitName="גרם";ing.qty=r1((p.qty||1)*100);ing.est=true;return ing}
+  ing.basis="unit";ing.unitName="יחידה";ing.qty=p.qty||1;return ing;
+}
+
 /* מנוע OCR שרץ בהקשר עברי הופך שורות לטיניות: המספר עובר לסוף,
    והתבליט נדחק אחריו. בנוסף האות g נקראת לעיתים כספרה 0. */
 var BULLET_END=/[\*\u2022\u00b7\u25cf\u25e6\u00bb\u00ab\u2039\u203a\u2043\+]+\s*$/;
@@ -1295,6 +1381,11 @@ function parseIngLine(line){
     .replace(/^[\s\*\-–—•●·◦o▪️▫︎+>«»]+/,"")
     .trim();
   if(!s)return null;
+  if(EQUIPMENT.test(s))return null;
+  /* שורה שרובה עברית מפורקת בכללי העברית */
+  var heb=(s.match(/[\u0590-\u05FF]/g)||[]).length,
+      lat=(s.match(/[A-Za-z]/g)||[]).length;
+  if(heb>lat)return buildHeIngredient(s);
   var fix=unbidiLine(s),estFlag=fix.est;
   s=fix.line;
   if(!s)return null;
