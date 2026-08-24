@@ -33,7 +33,7 @@ new Function("X",code+`;Object.assign(X,{parseRecipe,parseIngLine,parseQty,unitG
  ingTotals,recipeTotals,amountLabel,matchFood,sanitizeRecipe,offNorm,offSearch,applyOff,
  esc,r1,r0,num,foods,DB,blank,recipeBytes,hasHebrew,needsTranslation,translateSteps,VOL_G,
  setIng:v=>{ingEdit=v},getIng:()=>ingEdit,setKey:k=>{apiKey=k},saveIng:saveIngredient,
- setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine});`)(X);
+ setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine,titleScore,findTitle});`)(X);
 
 /* ============================================================
    ארבעת הכיתובים האמיתיים
@@ -666,6 +666,36 @@ X.offSearch(BARCODE).then(list=>{
   ok("100 → 10g",X.unbidiLine("flour 100 *").line==="10g flour",X.unbidiLine("flour 100 *").line);
   ok("בלי מספר בסוף לא זז",/almond/.test(X.parseIngLine("almond flour").name));
   ok("תבליט בסוף בלבד",X.parseIngLine("Pinch of salt *")!==null);
+  
+  
+
+  sec("בחירת כותרת");
+  const CAP=`stefan_agcoaching
+  This healthy chocolate banana bread has no business tasting this good
+  I've made a lot of banana bread recipes and this is easily one of my favourites.
+  Chocolate Banana Bread
+  Ingredients:
+  * 250g ripe banana
+  Method:
+  1. Preheat oven to 180C.`;
+  ok("כותרת אמיתית מנצחת משפט תיאור",X.parseRecipe(CAP).title==="Chocolate Banana Bread",X.parseRecipe(CAP).title);
+  ok("משפט שמסתיים בנקודה מקבל ניקוד שלילי",X.titleScore("I've made a lot of banana bread recipes and this is easily one.")<0);
+  ok("משפט בגוף ראשון נענש",X.titleScore("This healthy banana bread has no business tasting this good")<0);
+  ok("כותרת ב-Title Case מקבלת ניקוד גבוה",X.titleScore("Chocolate Banana Bread")>=6);
+  ok("כותרת ארוכה מדי נענשת",X.titleScore("A very long descriptive line that goes on and on about the recipe")<3);
+  ok("שם משתמש לא נבחר",X.parseRecipe(CAP).title!=="stefan_agcoaching");
+  ok("כותרות ארבעת המתכונים נשמרו",
+     [P1,P2,P3,P4].every(P=>P.title.length>10),[P1,P2,P3,P4].map(P=>P.title).join(" | "));
+  
+  sec("מרכיבים כפולים");
+  const D1=X.parseRecipe("T\nIngredients:\n* 1 cup shredded hash browns\n* 1 cup shredded hash browns\n* 2 eggs");
+  ok("שורה זהה לא נספרת פעמיים",D1.ingredients.length===2,D1.ingredients.length);
+  const D2=X.parseRecipe("T\nIngredients:\n* 1 CUP Shredded Hash Browns\n* 1 cup shredded hash browns");
+  ok("כפילות למרות הבדלי אותיות",D2.ingredients.length===1,D2.ingredients.length);
+  const D3=X.parseRecipe("T\nIngredients:\n* 1 cup mozzarella\n* 0.5 cup mozzarella");
+  ok("כמויות שונות נשמרות בנפרד",D3.ingredients.length===2,D3.ingredients.length);
+  const D4=X.parseRecipe("T\nIngredients:\n\u2022 250g banana\n* 250g banana");
+  ok("תבליט שונה עדיין נחשב כפילות",D4.ingredients.length===1,D4.ingredients.length);
   
   
   console.log("\n"+"═".repeat(40));
