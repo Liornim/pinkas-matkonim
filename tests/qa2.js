@@ -33,7 +33,7 @@ new Function("X",code+`;Object.assign(X,{parseRecipe,parseIngLine,parseQty,unitG
  ingTotals,recipeTotals,amountLabel,matchFood,sanitizeRecipe,offNorm,offSearch,applyOff,
  esc,r1,r0,num,foods,DB,blank,recipeBytes,hasHebrew,needsTranslation,translateSteps,VOL_G,
  setIng:v=>{ingEdit=v},getIng:()=>ingEdit,setKey:k=>{apiKey=k},saveIng:saveIngredient,
- setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine,titleScore,findTitle,parseHeLine,heVariants});`)(X);
+ setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine,titleScore,findTitle,parseHeLine,heVariants,looksLikeInstruction,pick});`)(X);
 
 /* ============================================================
    ארבעת הכיתובים האמיתיים
@@ -741,6 +741,110 @@ X.offSearch(BARCODE).then(list=>{
   });
   ok("מרכיב אמיתי לא מסונן",X.parseIngLine("200 גרם חזה עוף")!==null);
   ok("שמן לא מסונן בטעות",X.parseIngLine("כף שמן זית")!==null);
+  
+  
+
+  sec("שלושת המתכונים החדשים");
+  const COOKIST=`cookistwow
+  Tender inside and crispy outside, this recipe is a must-try!
+  INGREDIENTS
+  5 chicken breasts;
+  500 g (1 pound) potatoes;
+  150 g (3/4 cup) cheese;
+  10 g (1 tbsp) cornstarch;
+  salt and pepper.
+  METHOD
+  Season chicken breasts with salt and pepper on both sides.
+  Peel and shred potatoes, season with salt, set aside for 5 minutes.
+  Mix potatoes with cheese and cornstarch.
+  Cook chicken over medium heat for 5 minutes per side or until golden.`;
+  const PC=X.parseRecipe(COOKIST);
+  ok("Cookist: 5 מרכיבים בלבד",PC.ingredients.length===5,PC.ingredients.length);
+  ok("Cookist: שלבי הכנה לא נכנסו",!PC.ingredients.some(i=>/Season|Peel|Mix|Cook/i.test(i.name)));
+  ok("Cookist: גבינה בסוגריים זוהתה",!!PC.ingredients.find(i=>/גבינה צהובה/.test(i.name)));
+  ok("Cookist: גבינה 150 גרם",PC.ingredients.find(i=>/גבינה/.test(i.name)).qty===150);
+  ok("Cookist: cornstarch ולא תירס",!!PC.ingredients.find(i=>/קורנפלור/.test(i.name)));
+  ok("Cookist: salt and pepper כתבלין",!!PC.ingredients.find(i=>/מלח ותבלינים/.test(i.name)));
+  ok("Cookist: סה\"כ סביר",X.recipeTotals(PC).k>1000&&X.recipeTotals(PC).k<2500,Math.round(X.recipeTotals(PC).k));
+  
+  const BALLS=`thefitnesschef_
+  Ingredients:
+  Large handful finely diced spinach
+  300g cooked potato
+  300g chicken breast mince
+  1/2 chopped onion
+  Small handful coriander
+  3 finely sliced green chillies
+  50g flour
+  20g garlic puree
+  1 tsp baking powder
+  Juice of 1/2 a lemon
+  Salt
+  20g sweet chilli sauce
+  20ml olive oil
+  Method:
+  2. Mix thoroughly with hands until smooth, then form 8 evenly sized balls
+  4. Air fry for 20 mins at 200 degrees C, shaking halfway
+  Calories per ball: 128
+  Protein: 10g
+  Carbs: 13g
+  Fat: 4g`;
+  const PBall=X.parseRecipe(BALLS),NBall=X.recipeNumbers(PBall);
+  ok("Balls: 13 מרכיבים",PBall.ingredients.length===13,PBall.ingredients.length);
+  ok("Balls: 'form 8 balls' → 8 מנות",PBall.servings===8,PBall.servings);
+  ok("Balls: '1/2 onion' לא נקרא כמספר מנות",PBall.servings!==2);
+  ok("Balls: 128 קל למנה",NBall.per.k===128,NBall.per.k);
+  ok("Balls: 1024 לכל המתכון",NBall.total.k===1024,NBall.total.k);
+  ok("Balls: לפי המתכון",NBall.fromRecipe===true);
+  ok("Balls: handful תרד = 20 גרם",PBall.ingredients[0].qty===20,PBall.ingredients[0].qty);
+  ok("Balls: צ'ילי ירוק זוהה",!!PBall.ingredients.find(i=>/פלפל חריף/.test(i.name)));
+  ok("Balls: מחית שום זוהתה",!!PBall.ingredients.find(i=>/מחית שום/.test(i.name)));
+  ok("Balls: רוטב צ'ילי מתוק זוהה",!!PBall.ingredients.find(i=>/צ'ילי מתוק/.test(i.name)));
+  
+  const NANDOS=`Credit to jessespt
+  Ingredients:
+  350g Potatoes
+  150g Chicken Breast
+  50ml Nando's Sauce
+  40g Light Cream Cheese
+  Squirt of Garlic Puree
+  1/2 Chopped Onion
+  1/2 Chopped Pepper
+  Seasoning of your choice
+  30g Reduced Fat Cheese
+  Cook for 45 mins on 180 degrees
+  Calories - 556
+  Carbs: 48g
+  Fat: 15g
+  Protein: 50g`;
+  const PN=X.parseRecipe(NANDOS),NN=X.recipeNumbers(PN);
+  ok("Nandos: 9 מרכיבים",PN.ingredients.length===9,PN.ingredients.length);
+  ok("Nandos: 'Calories - 556' נקלט",PN.stated&&PN.stated.k===556,JSON.stringify(PN.stated));
+  ok("Nandos: 'Protein: 50g' נקלט",PN.stated.p===50,PN.stated.p);
+  ok("Nandos: 'Carbs: 48g' נקלט",PN.stated.c===48,PN.stated.c);
+  ok("Nandos: מנה אחת",PN.servings===1,PN.servings);
+  ok("Nandos: מוצג 556",NN.total.k===556,NN.total.k);
+  ok("Nandos: שורת הבישול לא נכנסה",!PN.ingredients.some(i=>/45|180|Cook/i.test(i.name)));
+  ok("Nandos: גבינה דלת שומן זוהתה",!!PN.ingredients.find(i=>/גבינה צהובה/.test(i.name)));
+  
+  sec("סינון הוראות הכנה");
+  const inst=(l)=>X.looksLikeInstruction(l);
+  ok("הוראה עם דקות נחסמת",inst("Bake for 20-25 minutes"));
+  ok("הוראה עם מעלות נחסמת",inst("Air fry at 200 degrees C"));
+  ok("משפט תיאור נחסם",inst("Tender inside and crispy outside, this recipe is a must-try!"));
+  ok("הוראה בעברית נחסמת",inst("מניחים מעט מהבצל בתחתית התבנית"));
+  ok("שורה ארוכה נחסמת",inst("x".repeat(75)));
+  ok("ספריי בישול עובר",!inst("Zero-calorie cooking spray"));
+  ok("מרכיב מבושל עובר",!inst("300g cooked potato"));
+  ok("מרכיב עם סוגריים עובר",!inst("150 g (3/4 cup) cheese"));
+  ok("מרכיב פשוט עובר",!inst("2 lbs lean ground beef"));
+  ok("תבלין עובר",!inst("Everything Bagel seasoning"));
+  
+  sec("מאקרו בסדר הפוך");
+  ok("'Calories - 556'",X.pick("Calories - 556","cal\\b|calories")===556);
+  ok("'Protein: 50g'",X.pick("Protein: 50g","protein")===50);
+  ok("'128 Calories' עדיין עובד",X.pick("128 Calories","cal\\b|calories")===128);
+  ok("'7g Protein' עדיין עובד",X.pick("7g Protein","protein")===7);
   
   
   console.log("\n"+"═".repeat(40));
