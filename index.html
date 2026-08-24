@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.2.0">
+<meta name="app-version" content="1.3.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.2.0</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.3.0</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -193,11 +193,16 @@ var DB=[
 {n:"תמצית וניל",k:288,p:0,c:12.7,f:0,s:0,b:0,u:{"כפית":4.2}},
 {n:"אבקת אפייה",k:53,p:0,c:28,f:0,s:0,b:0.2,u:{"כפית":4.6}},
 {n:"סודה לשתייה",k:0,p:0,c:0,f:0,s:0,b:0,u:{"כפית":4.6}},
-{n:"סירופ מייפל",k:260,p:0,c:67,f:0,s:0,b:0,u:{"כף":20}}
+{n:"סירופ מייפל",k:260,p:0,c:67,f:0,s:0,b:0,u:{"כף":20}},
+{n:"קורנפלור",k:381,p:0.3,c:91,f:0.1,s:0,b:0.9,u:{"כף":8}},
+{n:"פלפל חריף",k:40,p:1.9,c:9,f:0.4,s:0,b:1.5,u:{"פלפל":15}},
+{n:"רוטב צ'ילי מתוק",k:230,p:0.5,c:56,f:0.2,s:0,b:0.5,u:{"כף":20}},
+{n:"רוטב עגבניות",k:60,p:1.5,c:9,f:2,s:0.4,b:1.5,u:{"כף":16}},
+{n:"מחית שום",k:150,p:6,c:33,f:0.5,s:0.1,b:2,u:{"כף":15}}
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.2.0";
+var APP_VERSION="1.3.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -1231,6 +1236,13 @@ var ALIAS=[
  ["vanilla extract","תמצית וניל"],["vanilla","תמצית וניל"],
  ["baking powder","אבקת אפייה"],["baking soda","סודה לשתייה"],
  ["almond flour","שקדים"],["oat flour","שיבולת שועל"],
+ ["salt and pepper","מלח ותבלינים"],["black pepper","מלח ותבלינים"],["salt & pepper","מלח ותבלינים"],
+ ["cornstarch","קורנפלור"],["cornflour","קורנפלור"],["corn starch","קורנפלור"],
+ ["sweet chilli sauce","רוטב צ'ילי מתוק"],["sweet chili sauce","רוטב צ'ילי מתוק"],
+ ["green chillies","פלפל חריף"],["green chilies","פלפל חריף"],["chilli","פלפל חריף"],["chili","פלפל חריף"],
+ ["garlic puree","מחית שום"],["light cream cheese","גבינת שמנת דלת שומן"],
+ ["reduced fat cheese","גבינה צהובה"],["light grated cheese","גבינה צהובה"],["grated cheese","גבינה צהובה"],
+ ["cheese","גבינה צהובה"],["mince","חזה עוף"],
  ["seasoning","מלח ותבלינים"],["powder","מלח ותבלינים"],["paprika","מלח ותבלינים"]
 ];
 function aliasFood(name){
@@ -1277,6 +1289,22 @@ function unitGrams(food,he){
   for(i=0;i<ks.length;i++)if(ks[i].indexOf(he)===0||ks[i].indexOf(he)>=0)return food.u[ks[i]];
   return 0;
 }
+/* שורה שנראית כמו הוראת הכנה, משפט תיאור או תגובה — אינה מרכיב */
+var INSTRUCT_EN=/\b(minutes?|mins?|seconds?|hours?|degrees?|preheat|bake|baking sheet|cook(?:ing)?(?!\s*spray)|mix|mixing|add|adding|place|stir|serve|serving|until|then|heat|season(?:ing)? with|spread|roll|cut|slice into|let\s|remove|combine|whisk|pour|top with|air ?fry|fridge|freezer|oven|repeat|enjoy|credit|recipe|give it a go|per (ball|slice|serving))\b/i;
+var INSTRUCT_HE=/(מניחים|אופים|מערבבים|מוסיפים|שמים|מחממים|מבשלים|מטגנים|מקררים|מגישים|חותכים|פורסים|מפזרים|מכסים|דקות|מעלות|לאחר|עד ש|בתחתית|בערך)/;
+function looksLikeInstruction(l){
+  var s=String(l).trim();
+  if(!s)return true;
+  if(s.length>70)return true;
+  if(INSTRUCT_EN.test(s)||INSTRUCT_HE.test(s))return true;
+  var words=s.split(/\s+/).length;
+  /* משפט ארוך בלי מספר הוא כמעט תמיד תיאור ולא מרכיב */
+  if(words>7&&!/\d/.test(s))return true;
+  if(words>9)return true;
+  if(/[.!?]$/.test(s)&&words>5)return true;
+  return false;
+}
+
 /* ===== פירוק שורות בעברית ===== */
 var HE_FRAC={"שלושת רבעי":0.75,"שני שליש":2/3,"חצי":0.5,"רבע":0.25,"שליש":1/3};
 var HE_NUM={"אחד":1,"אחת":1,"שתי":2,"שני":2,"שניים":2,"שתיים":2,"שלושה":3,"שלוש":3,
@@ -1390,10 +1418,10 @@ function parseIngLine(line){
   s=fix.line;
   if(!s)return null;
   var pq=parseQty(s),qty=pq.q,rest=pq.rest.trim(),unit=null,i;
-  if(/^handful/i.test(rest)){qty=qty||1;unit={he:"חופן",g:0};rest=rest.replace(/^handful\s*(of)?\s*/i,"")}
+  if(/^(large |small |big )?handful/i.test(rest)){qty=qty||1;unit={he:"חופן",g:0};rest=rest.replace(/^(large |small |big )?handful\s*(of)?\s*/i,"")}
   else for(i=0;i<UNITS.length;i++){var m=rest.match(UNITS[i].re);
     if(m){unit=UNITS[i];rest=rest.slice(m[0].length).trim();break}}
-  rest=rest.replace(/^(of|the)\s+/i,"").trim();
+  rest=rest.replace(/\([^)]*\)/g," ").replace(/\s{2,}/g," ").replace(/^(of|the)\s+/i,"").replace(/[;,.]+$/,"").trim();
   if(!rest)return null;
   var food=aliasFood(rest),name=food?food.n+" — "+rest:rest;
   var per=food?{k:food.k,p:food.p,c:food.c,f:food.f,s:food.s||0,b:food.b||0}:{k:0,p:0,c:0,f:0,s:0,b:0};
@@ -1452,13 +1480,13 @@ function parseMacros(lines){
   /* רמזים למספר המנות ולבסיס המדידה */
   for(i=0;i<lines.length;i++){
     l=lines[i];
-    m=l.match(/\b1\s*(?:of|out of|\/)\s*(\d{1,3})\b/i);
+    m=l.match(/\b1\s*(?:of|out of)\s+(\d{1,3})\b/i);
     if(m){servings=+m[1];perServing=true}
     if(!servings){
-      m=l.match(new RegExp("(?:into|makes|yields?|serves|cut into)\\s+(?:about\\s+)?(\\d{1,3})\\s*(?:"+YIELD_WORDS+")?","i"));
+      m=l.match(new RegExp("(?:into|makes|yields?|serves|cut into|form)\\s+(?:about\\s+)?(\\d{1,3})\\s*(?:evenly sized\\s*)?(?:"+YIELD_WORDS+")?","i"));
       if(m)servings=+m[1];
     }
-    if(new RegExp("\\bper\\s+(slice|serving|piece|square|bar|roll|nugget|muffin|cookie|bagel|wrap|portion)\\b","i").test(l))perServing=true;
+    if(new RegExp("\\bper\\s+(slice|serving|piece|square|bar|ball|roll|nugget|muffin|cookie|bagel|wrap|portion)\\b","i").test(l))perServing=true;
     if(/1\s*serving\s*=/i.test(l))perServing=true;
   }
 
@@ -1491,8 +1519,10 @@ function parseMacros(lines){
 }
 /* ערך מאקרו חייב להיות מספר עצמאי, לא חלק ממספר ארוך יותר */
 function pick(line,words){
-  var re=new RegExp("(?:^|[^\\d.,])(\\d{1,4}(?:\\.\\d)?)\\s*g?\\s*(?:"+words+")","i");
-  var m=line.match(re);
+  var m=line.match(new RegExp("(?:^|[^\\d.,])(\\d{1,4}(?:\\.\\d)?)\\s*g?\\s*(?:"+words+")","i"));
+  if(m)return parseFloat(m[1]);
+  /* הצורה ההפוכה: "Calories - 556" או "Protein: 50g" */
+  m=line.match(new RegExp("(?:"+words+")[^\\d\\n]{0,18}?(\\d{1,4}(?:\\.\\d)?)\\s*g?","i"));
   return m?parseFloat(m[1]):null;
 }
 /* חלבון ופחמימה 4 קלוריות לגרם, שומן 9. ערך שחורג מהאנרגיה המוצהרת אינו אפשרי,
@@ -1597,11 +1627,15 @@ function parseRecipe(text){
   var ings=[],seenLine={};
   ingLines.forEach(function(x){
     if(/^(macros?|nutrition|comment|follow)/i.test(x))return;
-    if(x.length>90)return;
+    if(looksLikeInstruction(x))return;
     var key=x.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]/g,"");
     if(!key||seenLine[key])return;
     seenLine[key]=1;
-    var g=parseIngLine(x);if(g)ings.push(g)});
+    var g=parseIngLine(x);
+    if(!g)return;
+    /* מרכיב יחיד ששוקל יותר מ-5 ק"ג הוא כמעט תמיד שגיאת פירוק */
+    if(g.basis==="100g"&&g.qty>5000)return;
+    ings.push(g)});
   return{title:title,source:source,yield:findYield(raw),ingredients:ings,
     ingredientsSrc:ingLines.join("\n"),
     stepsSrc:stepLines.join("\n"),steps:stepLines.map(convText).join("\n"),
