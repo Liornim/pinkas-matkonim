@@ -33,7 +33,7 @@ new Function("X",code+`;Object.assign(X,{parseRecipe,parseIngLine,parseQty,unitG
  ingTotals,recipeTotals,amountLabel,matchFood,sanitizeRecipe,offNorm,offSearch,applyOff,
  esc,r1,r0,num,foods,DB,blank,recipeBytes,hasHebrew,needsTranslation,translateSteps,VOL_G,
  setIng:v=>{ingEdit=v},getIng:()=>ingEdit,setKey:k=>{apiKey=k},saveIng:saveIngredient,
- setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine,titleScore,findTitle});`)(X);
+ setEditing:v=>{editing=v},getEditing:()=>editing,safeUrl,shortUrl,recipeNumbers,suggestServings,parseMacros,grabMacros,plausibleMacros,unbidiLine,titleScore,findTitle,parseHeLine,heVariants});`)(X);
 
 /* ============================================================
    ארבעת הכיתובים האמיתיים
@@ -696,6 +696,51 @@ X.offSearch(BARCODE).then(list=>{
   ok("כמויות שונות נשמרות בנפרד",D3.ingredients.length===2,D3.ingredients.length);
   const D4=X.parseRecipe("T\nIngredients:\n\u2022 250g banana\n* 250g banana");
   ok("תבליט שונה עדיין נחשב כפילות",D4.ingredients.length===1,D4.ingredients.length);
+  
+  
+
+  sec("מתכון בעברית — שווארמה");
+  const SH=["שווארמה חזה עוף ובשיטה המוכרת והכי טעימה שיש!","","מצרכים:","תבנית אינגליש קייק",
+  "חצי קילו חזה עוף פרוס דק","בצל פרוס לרצועות","תבלין שווארמה","כף שמן זית","",
+  "אופן הכנה:","מניחים מעט מהבצל בתחתית התבנית עם חצי כף שמן זית.","אופים על 180 מעלות כ 40 דק."].join("\n");
+  const PH=X.parseRecipe(SH),NH=X.recipeNumbers(PH);
+  ok("תבנית לא נספרת כמרכיב",PH.ingredients.length===4,PH.ingredients.length);
+  ok("אין מרכיב 'תבנית'",!PH.ingredients.some(i=>/תבנית|אינגליש/.test(i.name)));
+  const heFind=(n)=>PH.ingredients.find(i=>i.name.indexOf(n)===0);
+  ok("חצי קילו = 500 גרם",heFind("חזה עוף").qty===500,heFind("חזה עוף").qty);
+  ok("חזה עוף עם ערכים",Math.round(X.ingTotals(heFind("חזה עוף")).k)===600,X.ingTotals(heFind("חזה עוף")).k);
+  ok("בצל בלי כמות = בצל אחד",heFind("בצל").qty===110,heFind("בצל").qty);
+  ok("כף שמן זית = 14 גרם",heFind("שמן זית").qty===14,heFind("שמן זית").qty);
+  ok("שמן זית עם ערכים",Math.round(X.ingTotals(heFind("שמן זית")).k)===124);
+  ok("תבלין זוהה",!!heFind("מלח ותבלינים"));
+  ok("תבלין ביחידה אחת ולא 100 גרם",heFind("מלח ותבלינים").qty===1);
+  ok("אף מרכיב לא מאופס",PH.ingredients.filter(i=>X.ingTotals(i).k===0).length===1,
+     PH.ingredients.filter(i=>X.ingTotals(i).k===0).map(i=>i.name).join());
+  ok("סה\"כ סביר",Math.round(NH.total.k)===768,Math.round(NH.total.k));
+  ok("חלבון סביר",Math.round(NH.total.p)===114,Math.round(NH.total.p));
+  
+  sec("יחידות וכמויות בעברית");
+  const he=(l)=>X.parseIngLine(l);
+  ok("שתי ביצים = 100 גרם",he("שתי ביצים").qty===100,he("שתי ביצים").qty);
+  ok("ביצים לא הפך לחלבון ביצה",/^ביצה/.test(he("שתי ביצים").name),he("שתי ביצים").name);
+  ok("3 בצלים = 330 גרם",he("3 בצלים").qty===330,he("3 בצלים").qty);
+  ok("2 כוסות אורז = 320 גרם",he("2 כוסות אורז מבושל").qty===320,he("2 כוסות אורז מבושל").qty);
+  ok("5 שיני שום = 15 גרם",he("5 שיני שום").qty===15,he("5 שיני שום").qty);
+  ok("4 פרוסות לחם = 128 גרם",he("4 פרוסות לחם מלא").qty===128,he("4 פרוסות לחם מלא").qty);
+  ok("200 גרם",he("200 גרם פטריות").qty===200,he("200 גרם פטריות").qty);
+  ok("רבע כוס",he("רבע כוס אורז מבושל").qty===40,he("רבע כוס אורז מבושל").qty);
+  ok("שלושת רבעי כוס",he("שלושת רבעי כוס אורז מבושל").qty===120,he("שלושת רבעי כוס אורז מבושל").qty);
+  ok("2 כפות = 28 גרם",he("2 כפות שמן זית").qty===28,he("2 כפות שמן זית").qty);
+  ok("קילו שלם",he("קילו חזה עוף").qty===1000,he("קילו חזה עוף").qty);
+  ok("מ\"ל מזוהה",he('250 מ"ל חלב 1%').qty===250,he('250 מ"ל חלב 1%').qty);
+  
+  sec("סינון ציוד מטבח");
+  ["תבנית אינגליש קייק","סיר בינוני","מחבת טפלון","נייר אפייה","בלנדר","מעבד מזון",
+   "waffle maker","baking sheet","parchment paper","air fryer"].forEach(function(t){
+    ok("'"+t+"' מסונן",X.parseIngLine(t)===null);
+  });
+  ok("מרכיב אמיתי לא מסונן",X.parseIngLine("200 גרם חזה עוף")!==null);
+  ok("שמן לא מסונן בטעות",X.parseIngLine("כף שמן זית")!==null);
   
   
   console.log("\n"+"═".repeat(40));
