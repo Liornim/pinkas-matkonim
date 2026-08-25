@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.5.2">
+<meta name="app-version" content="1.6.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.5.2</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.6.0</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -202,7 +202,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.5.2";
+var APP_VERSION="1.6.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -1197,7 +1197,7 @@ var UNITS=[
  {re:/^(oz|ounces?)\b/i,g:28.35,he:"גרם"},
  {re:/^(kg|kilograms?)\b/i,g:1000,he:"גרם"},
  {re:/^(g|gr|grams?)\b/i,g:1,he:"גרם"},
- {re:/^(ml|milliliters?)\b/i,g:1,he:"גרם"},
+   {re:/^(ml|mls|milliliters?|m(?=\s))/i,g:1,he:"גרם"},
  {re:/^(cups?)\b/i,g:0,he:"כוס"},
  {re:/^(tbsps?|tablespoons?)\b/i,g:0,he:"כף"},
  {re:/^(tsps?|teaspoons?)\b/i,g:0,he:"כפית"},
@@ -1303,6 +1303,9 @@ function isGarbageLine(l){
   var mw=s.match(MACRO_WORDS);
   if(mw&&mw.length>=2)return true;
   if(UI_TEXT.test(s))return true;
+  /* ערבוב צפוף של אותיות לטיניות ועבריות באותה מילה = פלט OCR שגוי */
+  var mixed=(s.match(/[A-Za-z][\u0590-\u05FF]|[\u0590-\u05FF][A-Za-z]/g)||[]).length;
+  if(mixed>=2)return true;
   /* מספר ומילת יחידה בלבד, בלי שם מרכיב */
   var bare=s.replace(/[\d.,:;·•*<>()\[\]©®™+\-–—\/\\|"'%]/g,"").replace(/\s+/g," ").trim();
   if(/^(יחידה|יחידות|גרם|גר|ג|כף|כפות|כפית|כפיות|כוס|כוסות|מנה|מנות|unit|units|gram|grams?|g|serving|servings)$/i.test(bare))return true;
@@ -1364,8 +1367,20 @@ function parseHeLine(s){
   }
   for(i=0;i<HE_UNITS.length;i++){m=s.match(HE_UNITS[i].re);
     if(m){unit=HE_UNITS[i];s=s.slice(m[0].length).trim();break}}
+  /* ה-OCR מזיז לעיתים את המספר לאמצע השורה — מחפשים מספר עצמאי שאינו אחוז */
+  var moved=false;
+  if(qty===null){
+    var mm=s.match(/(?:^|[\s*+])(\d{1,4}(?:[.,]\d+)?)\s*(קילו|ק"ג|גרם|גר'|מ"ל|מל)?(?!\s*%)(?![\u0590-\u05FF\d])/);
+    if(mm){
+      qty=Number(String(mm[1]).replace(",","."));
+      if(mm[2]){for(i=0;i<HE_UNITS.length;i++)if(HE_UNITS[i].re.test(mm[2])){unit=HE_UNITS[i];break}}
+      else if(qty>=20)unit={g:1};
+      s=s.replace(mm[0]," ").replace(/\s{2,}/g," ").trim();
+      moved=true;
+    }
+  }
   s=s.replace(/\([^)]*\)/g," ").replace(/\s{2,}/g," ").replace(/^(של|ה)\s+/,"").replace(/[;,.]+$/,"").trim();
-  return{qty:qty,unit:unit,rest:s};
+  return{qty:qty,unit:unit,rest:s,est:moved};
 }
 function heAliasFood(name){
   var i,l=foods();
@@ -1398,6 +1413,7 @@ function buildHeIngredient(line){
   var per=food?{k:food.k,p:food.p,c:food.c,f:food.f,s:food.s||0,b:food.b||0}
                :{k:0,p:0,c:0,f:0,s:0,b:0};
   var ing={name:food?food.n+" — "+p.rest:p.rest,src:food?"db":"manual",per:per};
+  if(p.est)ing.est=true;
   if(p.unit&&p.unit.g){ing.basis="100g";ing.unitName="גרם";ing.qty=r1((p.qty||1)*p.unit.g);return ing}
   if(p.unit){
     var g=unitGrams(food,p.unit.he)||VOL_G[p.unit.he]||0;
@@ -1593,9 +1609,28 @@ function findYield(lines){
   return "";
 }
 /* ניקוד מועמדים לכותרת: כותרת קצרה ומנוסחת ככותרת עדיפה על משפט מהתיאור */
+/* מסירים מהמועמד אסימוני רעש: סימנים בודדים, מספרים תלושים וסימני פיסוק בקצה */
+function cleanTitleCand(c){
+  return String(c).split(/\s+/).filter(function(w){
+    if(!w)return false;
+    if(/^[^A-Za-z\u0590-\u05FF]+$/.test(w))return false;
+    return true;
+  }).join(" ").replace(/[\s:;,\-–—|]+$/,"").trim();
+}
 function titleScore(c){
   var s=0,words=c.split(/\s+/).filter(Boolean),n=words.length;
+  var letters=(c.match(/[A-Za-z\u0590-\u05FF]/g)||[]).length;
+  /* ניקוד עברי הוא כמעט תמיד רעש OCR מתוך פריים הווידאו */
+  if(/[\u0591-\u05C7]/.test(c))return -99;
+  if(letters<10)return -99;
+  if(letters/Math.max(1,c.length)<0.6)return -99;
+  var oneChar=words.filter(function(w){return w.length===1}).length;
+  if(oneChar>=2)return -99;
   if(/[.!?]$/.test(c))s-=4;
+  /* פתיחה באות קטנה או המשך משפט = שבר משפט, לא כותרת */
+  if(/^[a-z]/.test(c))s-=5;
+  if(/[?]/.test(c))s-=4;
+  if(/\b(here|my|our|your|their)\b/i.test(c))s-=3;
   if(/\b(i|i've|i'm|ive|my|you|your|this|these|those|it|so|and|but|because)\b/i.test(c))s-=3;
   if(/\b(made|tastes?|tasting|love|favourite|favorite|business|perfect|easily)\b/i.test(c))s-=2;
   if(n>=2&&n<=8)s+=3; else if(n>12)s-=3;
@@ -1605,8 +1640,14 @@ function titleScore(c){
   if(/\brecipes?\s*$/i.test(c))s-=1;
   return s;
 }
+function firstIngIndex(lines){
+  var i;
+  for(i=0;i<lines.length;i++)
+    if(/^[\s\*\-–—•●·◦+>°]\s*\S/.test(lines[i])||/^\d+\s*(g\b|גרם|גר')/.test(lines[i]))return i;
+  return -1;
+}
 function findTitle(lines,limit,source){
-  var best="",bestScore=-99,i,c;
+  var best="",bestScore=-99,i,c,fi=firstIngIndex(lines);
   for(i=0;i<limit;i++){
     c=lines[i];
     if(!c||NOISE.test(c))continue;
@@ -1615,10 +1656,13 @@ function findTitle(lines,limit,source){
     if(/^(ingredients?|how to|directions|instructions|method|macros?|nutrition)/i.test(c))continue;
     if(/(comment|dm me|link in bio|follow|save this|תגובה|מקור של)/i.test(c))continue;
     if(/^[\*\-•\d]/.test(c))continue;
-    c=c.replace(/[#@]\S+/g,"").replace(/\s{2,}/g," ").trim();
+    c=cleanTitleCand(c.replace(/[#@]\S+/g,""));
     if(c.split(/\s+/).length<2)continue;
     if(c.length<8||c.length>90)continue;
     var sc=titleScore(c);
+    /* שורה שצמודה לרשימת המרכיבים היא כמעט תמיד הכותרת */
+    if(fi>0&&i>=fi-3&&i<fi)sc+=4;
+    if(/(מתכון|recipe)/i.test(c))sc+=2;
     if(sc>bestScore){bestScore=sc;best=c}
   }
   return best;
@@ -1633,7 +1677,7 @@ function parseRecipe(text){
   }
   var joined=raw.join(" ");
   var source=findSource(raw);
-  var title=findTitle(raw,iIng>0?iIng:Math.min(8,raw.length),source);
+  var title=findTitle(raw,iIng>0?iIng:Math.min(22,raw.length),source);
   var ingLines=[],stepLines=[];
   var from=iIng>=0?iIng+1:0,to=iStep>=0?iStep:raw.length;
   var STOP=/^(macros?|nutrition|original creator|recipe by|comment\b)|\b(calories|kcal)\b|^per\s+\w+|\b1\s*(of|out of)\s*\d|#\w/i;
@@ -1658,13 +1702,14 @@ function parseRecipe(text){
     if(source&&x.toLowerCase()===source.toLowerCase())return;
     if(title&&x===title)return;
     /* בלי כותרת "מצרכים" אין דרך לדעת היכן הרשימה מתחילה — לכן נדרש תבליט או מספר */
-    if(strict&&!/^[\s\*\-–—•●·◦+>]|^\d/.test(x))return;
     if(looksLikeInstruction(x))return;
     var key=x.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]/g,"");
     if(!key||seenLine[key])return;
     seenLine[key]=1;
     var g=parseIngLine(x);
     if(!g)return;
+    /* בלי כותרת "מצרכים": מקבלים שורה עם תבליט או מספר, או שורה שזוהה בה מרכיב אמיתי */
+    if(strict&&g.src!=="db"&&!/^[\s\*\-–—•●·◦+>°ֿ]|^\d/.test(x))return;
     if(g.basis==="100g"&&g.qty>5000)return;
     ings.push(g)});
   /* ציון איכות: כמה מהמרכיבים באמת זוהו מול המאגר */
