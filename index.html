@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.4.0">
+<meta name="app-version" content="1.5.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.4.0</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.5.0</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -202,7 +202,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.4.0";
+var APP_VERSION="1.5.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -1289,6 +1289,25 @@ function unitGrams(food,he){
   for(i=0;i<ks.length;i++)if(ks[i].indexOf(he)===0||ks[i].indexOf(he)>=0)return food.u[ks[i]];
   return 0;
 }
+/* טקסט שמקורו בתצוגת ערכים תזונתיים ולא ברשימת מרכיבים */
+var MACRO_WORDS=/(חלבון|פחמימ|שומן|סיבים|רווי|קלוריות|protein|carbs?|fat\b|fiber|calories)/gi;
+var UI_TEXT=/(הערכים הם|לחיצה על|כמות המלאה|יחידה\s*·|הוסף|שמירה|עריכה מלאה|לפי המתכון|כל המתכון|סה"כ)/;
+function isGarbageLine(l){
+  var s=String(l).trim();
+  if(!s)return true;
+  /* לפחות שלוש אותיות אמיתיות */
+  var letters=(s.match(/[A-Za-z\u0590-\u05FF]/g)||[]).length;
+  if(letters<3)return true;
+  /* שתי מילות מאקרו או יותר באותה שורה = שורת ערכים, לא מרכיב */
+  var mw=s.match(MACRO_WORDS);
+  if(mw&&mw.length>=2)return true;
+  if(UI_TEXT.test(s))return true;
+  /* מספר ומילת יחידה בלבד, בלי שם מרכיב */
+  var bare=s.replace(/[\d.,:;·•*<>()\[\]©®™+\-–—\/\\|"'%]/g,"").replace(/\s+/g," ").trim();
+  if(/^(יחידה|יחידות|גרם|גר|ג|כף|כפות|כפית|כפיות|כוס|כוסות|מנה|מנות|unit|units|gram|grams?|g|serving|servings)$/i.test(bare))return true;
+  return false;
+}
+
 /* שורה שנראית כמו הוראת הכנה, משפט תיאור או תגובה — אינה מרכיב */
 var INSTRUCT_EN=/\b(minutes?|mins?|seconds?|hours?|degrees?|preheat|bake|baking sheet|cook(?:ing)?(?!\s*spray)|mix|mixing|add|adding|place|stir|serve|serving|until|then|heat|season(?:ing)? with|spread|roll|cut|slice into|let\s|remove|combine|whisk|pour|top with|air ?fry|fridge|freezer|oven|repeat|enjoy|credit|recipe|give it a go|per (ball|slice|serving))\b/i;
 var INSTRUCT_HE=/(מניחים|אופים|מערבבים|מוסיפים|שמים|מחממים|מבשלים|מטגנים|מקררים|מגישים|חותכים|פורסים|מפזרים|מכסים|דקות|מעלות|לאחר|עד ש|בתחתית|בערך)/;
@@ -1629,6 +1648,7 @@ function parseRecipe(text){
   var ings=[],seenLine={},strict=(iIng<0);
   ingLines.forEach(function(x){
     if(/^(macros?|nutrition|comment|follow)/i.test(x))return;
+    if(isGarbageLine(x))return;
     /* שורת כותרת משנה כמו "מעל:" או "Toppings:" אינה מרכיב */
     if(/[:：]\s*$/.test(x))return;
     if(source&&x.toLowerCase()===source.toLowerCase())return;
@@ -1643,7 +1663,11 @@ function parseRecipe(text){
     if(!g)return;
     if(g.basis==="100g"&&g.qty>5000)return;
     ings.push(g)});
+  /* ציון איכות: כמה מהמרכיבים באמת זוהו מול המאגר */
+  var known=ings.filter(function(g){return g.src==="db"&&ingTotals(g).k>0}).length;
+  var quality=ings.length?known/ings.length:0;
   return{title:title,source:source,yield:findYield(raw),ingredients:ings,
+    quality:quality,knownCount:known,
     ingredientsSrc:ingLines.join("\n"),
     stepsSrc:stepLines.join("\n"),steps:stepLines.map(convText).join("\n"),
     stated:mac.stated,statedBasis:mac.basis,servings:mac.servings,svKnown:mac.svKnown!==false,
@@ -1874,8 +1898,13 @@ function runOcr(files){
     e.stated=r.stated;e.statedBasis=r.statedBasis;e.servings=r.servings||1;e.svKnown=r.svKnown!==false;
     e.note="";
     busy="";editing=e;reviewMode=true;
-    if(!e.ingredients.length){err="הצלחתי לקרוא טקסט אבל לא זיהיתי רשימת מרכיבים. הטקסט המלא נשמר בשדה המקור.";
-      e.stepsSrc=r.raw.slice(0,4000)}
+    if(!e.ingredients.length){
+      err="לא זיהיתי רשימת מרכיבים בצילום. ודא שצילמת את הפוסט עצמו, ושכיתוב המתכון נראה בבירור.";
+      e.ingredientsSrc=r.raw.slice(0,4000);
+    }else if(r.quality<0.34){
+      err="הקריאה חלקית: רק "+r.knownCount+" מתוך "+e.ingredients.length+
+          " מרכיבים זוהו במאגר. אם הצילום אינו של פוסט מתכון, מחק ונסה שוב.";
+    }
     go("edit");
   }).catch(function(x){busy="";err=x.message||"הקריאה נכשלה.";view="list";render()});
 }
