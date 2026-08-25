@@ -847,6 +847,46 @@ X.offSearch(BARCODE).then(list=>{
   ok("'7g Protein' עדיין עובד",X.pick("7g Protein","protein")===7);
   
   
+
+  sec("מתכון עברי בלי כותרת 'מצרכים' — פיצה");
+  const PIZZA=["advahadad","מתכון לפיצת–Promax","\u2022 חבילה טוב טעם 3%","\u2022 ביצה אחת",
+  "\u2022 40 גרם קמח לבן (כ־2 כפות גדושות)","\u2022 שקית אבקת אפייה","\u2022 מלח + פלפל",
+  "\u2022 שום גבישי / תבלין לפיצה","","מעל:","\u2022 רסק עגבניות / רוטב לפיצה",
+  "\u2022 100 גרם גבינה צהובה 9%","\u2022 תוספות שאוהבים","","אופן הכנה:",
+  "מערבבים את כל מרכיבי הבצק בקערה ומעבירים לתבנית עם נייר אפייה משומן.","",
+  "ערכים לכל הפיצה","705 קלוריות","79.6 גרם חלבון"].join("\n");
+  const PZ=X.parseRecipe(PIZZA),NZ=X.recipeNumbers(PZ);
+  ok("כותרת נכונה",PZ.title==="מתכון לפיצת–Promax",PZ.title);
+  ok("שם המשתמש לא הפך למרכיב",!PZ.ingredients.some(i=>/advahadad/.test(i.name)));
+  ok("הכותרת לא הפכה למרכיב",!PZ.ingredients.some(i=>/Promax/.test(i.name)));
+  ok("כותרת המשנה 'מעל:' לא מרכיב",!PZ.ingredients.some(i=>/^מעל/.test(i.name)));
+  ok("9 מרכיבים",PZ.ingredients.length===9,PZ.ingredients.length);
+  ok("705 קלוריות נקלטו",PZ.stated&&PZ.stated.k===705,JSON.stringify(PZ.stated));
+  ok("79.6 גרם חלבון נקלט",PZ.stated.p===79.6,PZ.stated.p);
+  ok("מוצג לפי המתכון",NZ.fromRecipe===true);
+  ok("מוצג 705 ולא החישוב",NZ.total.k===705,NZ.total.k);
+  const pz=(n)=>PZ.ingredients.find(i=>i.name.indexOf(n)===0);
+  ok("ביצה אחת = 50 גרם",pz("ביצה").qty===50,pz("ביצה").qty);
+  ok("40 גרם קמח, הסוגריים לא בלבלו",pz("קמח").qty===40,pz("קמח").qty);
+  ok("100 גרם גבינה צהובה",pz("גבינה צהובה").qty===100,pz("גבינה צהובה").qty);
+  ok("'מלח + פלפל' כתבלין ולא כגמבה",!!pz("מלח ותבלינים"));
+  ok("אין פלפל גמבה של 120 גרם",!PZ.ingredients.some(i=>/^פלפל /.test(i.name)&&i.qty===120));
+  
+  sec("מאקרו עם יחידה בעברית");
+  ok("'79.6 גרם חלבון'",X.pick("79.6 גרם חלבון","protein|חלבון")===79.6);
+  ok("'705 קלוריות'",X.pick("705 קלוריות","cal\\b|calories|kcal|קלוריות")===705);
+  ok("'50 גרם פחמימות'",X.pick("50 גרם פחמימות","carbs?|פחמימ")===50);
+  ok("קלוריות בלבד מתקבל",X.parseMacros(["ערכים","705 קלוריות"]).stated.k===705);
+  ok("שורה אקראית עם מספר לא מתקבלת",X.parseMacros(["Bake at 350 for 20 minutes"]).stated===null);
+  
+  sec("כותרות משנה ותבליטים");
+  const strict=X.parseRecipe(["Title Here","\u2022 100g flour","Random note line","\u2022 2 eggs"].join("\n"));
+  ok("בלי כותרת מצרכים — רק שורות עם תבליט",strict.ingredients.length===2,strict.ingredients.length);
+  const withHdr=X.parseRecipe(["Title Here","Ingredients:","100g flour","2 eggs"].join("\n"));
+  ok("עם כותרת מצרכים — גם בלי תבליט",withHdr.ingredients.length===2,withHdr.ingredients.length);
+  ok("Toppings: מסונן",X.parseRecipe(["T","Ingredients:","100g flour","Toppings:","2 eggs"].join("\n")).ingredients.length===2);
+  
+  
   console.log("\n"+"═".repeat(40));
   console.log("  עברו: "+PASS+"    נכשלו: "+FAIL);
   console.log("═".repeat(40));
