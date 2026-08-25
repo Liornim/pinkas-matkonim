@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.5.1">
+<meta name="app-version" content="1.5.2">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.5.1</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.5.2</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -202,7 +202,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.5.1";
+var APP_VERSION="1.5.2";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -1509,6 +1509,9 @@ function parseMacros(lines){
       if(m)servings=+m[1];
     }
     if(new RegExp("\\bper\\s+(slice|serving|piece|square|bar|ball|roll|nugget|muffin|cookie|bagel|wrap|portion)\\b","i").test(l))perServing=true;
+    /* סימון בעברית: "לכל מנה" מול "לכל הפיצה / לכל המתכון" */
+    if(/ל(?:כל\s+)?(?:מנה|פרוסה|יחידה|כדור)(?![\u0590-\u05FF])/.test(l))perServing=true;
+    if(/לכל\s+ה(?:פיצה|מתכון|תבנית|כמות|לחם|עוגה|תבשיל)(?![\u0590-\u05FF])/.test(l))perServing=false;
     if(/1\s*serving\s*=/i.test(l))perServing=true;
   }
 
