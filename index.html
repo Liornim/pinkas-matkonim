@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.3.0">
+<meta name="app-version" content="1.4.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.3.0</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.4.0</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -202,7 +202,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.3.0";
+var APP_VERSION="1.4.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -1324,8 +1324,7 @@ var HE_UNITS=[
   heUnit("פרוסות|פרוסה",{he:"פרוסה"}),
   heUnit("חופן|קמצוץ",{he:"חופן"})
 ];
-var HE_ALIAS=[["תבלין","מלח ותבלינים"],["תבלינים","מלח ותבלינים"],["פלפל שחור","מלח ותבלינים"],
-  ["שמן זית","שמן זית"],["חזה עוף","חזה עוף"],["בצל","בצל"]];
+var HE_ALIAS=[["פלפל שחור","מלח ותבלינים"],["מלח","מלח ותבלינים"],["תבלינים","מלח ותבלינים"],["תבלין","מלח ותבלינים"]];
 /* ציוד מטבח — לא מרכיב */
 var EQUIPMENT=/^(תבנית|סיר(?![\u0590-\u05FF])|סירים|מחבת|תנור|נייר אפייה|נייר אפיה|נייר כסף|כלי |מזלג|בלנדר|מעבד מזון|מקציף|אינגליש קייק|רשת |מסננת|קרש חיתוך|waffle maker|baking (sheet|dish|tray|paper)|parchment|foil|skillet|frying pan|oven\b|blender|food processor|air fryer|mixer\b)/i;
 
@@ -1345,7 +1344,8 @@ function parseHeLine(s){
   }
   for(i=0;i<HE_UNITS.length;i++){m=s.match(HE_UNITS[i].re);
     if(m){unit=HE_UNITS[i];s=s.slice(m[0].length).trim();break}}
-  return{qty:qty,unit:unit,rest:s.replace(/^(של|ה)\s+/,"").trim()};
+  s=s.replace(/\([^)]*\)/g," ").replace(/\s{2,}/g," ").replace(/^(של|ה)\s+/,"").replace(/[;,.]+$/,"").trim();
+  return{qty:qty,unit:unit,rest:s};
 }
 function heAliasFood(name){
   var i,l=foods();
@@ -1365,9 +1365,11 @@ function heVariants(name){
   return out;
 }
 function heFindFood(name){
+  var a=heAliasFood(name);
+  if(a)return a;
   var v=heVariants(name),i,f;
   for(i=0;i<v.length;i++){f=matchFood(v[i]);if(f)return f}
-  return heAliasFood(name);
+  return null;
 }
 function buildHeIngredient(line){
   var p=parseHeLine(line);
@@ -1509,7 +1511,7 @@ function parseMacros(lines){
       if(c===null)c=pick(lines[j],"carbs?|carbohydrates?|פחמימ");
       if(f===null)f=pick(lines[j],"fat|שומן");
     }
-    if(p===null&&c===null&&f===null)continue;
+    if(p===null&&c===null&&f===null&&!/^[\d.,\s]*(calories|kcal|קלוריות)/i.test(lines[i]))continue;
     return{stated:plausibleMacros({k:k,p:p||0,c:c||0,f:f||0}),
       basis:perServing?"serving":"total",
       servings:servings||1,
@@ -1519,7 +1521,7 @@ function parseMacros(lines){
 }
 /* ערך מאקרו חייב להיות מספר עצמאי, לא חלק ממספר ארוך יותר */
 function pick(line,words){
-  var m=line.match(new RegExp("(?:^|[^\\d.,])(\\d{1,4}(?:\\.\\d)?)\\s*g?\\s*(?:"+words+")","i"));
+  var m=line.match(new RegExp("(?:^|[^\\d.,])(\\d{1,4}(?:\\.\\d)?)\\s*(?:g|גרם|גר'|ג')?\\s*(?:"+words+")","i"));
   if(m)return parseFloat(m[1]);
   /* הצורה ההפוכה: "Calories - 556" או "Protein: 50g" */
   m=line.match(new RegExp("(?:"+words+")[^\\d\\n]{0,18}?(\\d{1,4}(?:\\.\\d)?)\\s*g?","i"));
@@ -1624,16 +1626,21 @@ function parseRecipe(text){
     stepLines.push(l.replace(/^\d+[\.\)]\s*/,""));
   }
   var mac=parseMacros(raw);
-  var ings=[],seenLine={};
+  var ings=[],seenLine={},strict=(iIng<0);
   ingLines.forEach(function(x){
     if(/^(macros?|nutrition|comment|follow)/i.test(x))return;
+    /* שורת כותרת משנה כמו "מעל:" או "Toppings:" אינה מרכיב */
+    if(/[:：]\s*$/.test(x))return;
+    if(source&&x.toLowerCase()===source.toLowerCase())return;
+    if(title&&x===title)return;
+    /* בלי כותרת "מצרכים" אין דרך לדעת היכן הרשימה מתחילה — לכן נדרש תבליט או מספר */
+    if(strict&&!/^[\s\*\-–—•●·◦+>]|^\d/.test(x))return;
     if(looksLikeInstruction(x))return;
     var key=x.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]/g,"");
     if(!key||seenLine[key])return;
     seenLine[key]=1;
     var g=parseIngLine(x);
     if(!g)return;
-    /* מרכיב יחיד ששוקל יותר מ-5 ק"ג הוא כמעט תמיד שגיאת פירוק */
     if(g.basis==="100g"&&g.qty>5000)return;
     ings.push(g)});
   return{title:title,source:source,yield:findYield(raw),ingredients:ings,
