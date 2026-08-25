@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.5.0">
+<meta name="app-version" content="1.5.1">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@ summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.5.0</div>
+  <div class="ver">פנקס מתכונים · גרסה 1.5.1</div>
 </div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
@@ -202,7 +202,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.5.0";
+var APP_VERSION="1.5.1";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -217,7 +217,7 @@ var BUILTIN_PID="recipe-book-d7246";
 var BUILTIN_KEY="AIzaSyDbdUNxeCUzH9UB1XwQWPp85zSTFZXfhCs";
 var projectId=read(K_PID,"")||BUILTIN_PID, fbKey=read(K_FKEY,"")||BUILTIN_KEY, myName=read(K_NAME,"");
 var K_OCR="ocr-lang-v1",K_PREF="prefer-ocr-v1";
-var ocrLang=read(K_OCR,"eng"),preferOcr=read(K_PREF,false);
+var ocrLang=read(K_OCR,"eng+heb"),preferOcr=read(K_PREF,false);
 function useOcr(){return !apiKey||preferOcr}
 function cloudOn(){return !!(projectId&&fbKey)}
 function foods(){return DB.concat(customFoods)}
@@ -1167,7 +1167,8 @@ function prepImage(file){
     fr.readAsDataURL(file);
   });
 }
-function ocrFiles(files){
+function ocrFiles(files,lang){
+  var useLang=lang||ocrLang;
   return loadTess().then(function(){
     var out=[];
     return files.reduce(function(chain,f,n){
@@ -1175,7 +1176,7 @@ function ocrFiles(files){
         busy="מכין תמונה "+(n+1)+" מתוך "+files.length+"…";render();
         return prepImage(f);
       }).then(function(url){
-        return window.Tesseract.recognize(url,ocrLang,{logger:function(m){
+        return window.Tesseract.recognize(url,useLang,{logger:function(m){
           if(m.status==="recognizing text"){
             busy="קורא טקסט "+(n+1)+"/"+files.length+" — "+Math.round(m.progress*100)+"%";
             if(view==="list")drawList();
@@ -1706,7 +1707,7 @@ function saveSettings(){
   if(el("nm"))myName=el("nm").value.trim();
   if(el("pid"))projectId=el("pid").value.trim()||BUILTIN_PID;
   if(el("fk"))fbKey=el("fk").value.trim()||BUILTIN_KEY;
-  if(el("ol"))ocrLang=el("ol").value||"eng";
+  if(el("ol"))ocrLang=el("ol").value||"eng+heb";
   if(el("po"))preferOcr=!!el("po").checked;
   write(K_KEY,apiKey);write(K_MODEL,model);
   write(K_NAME,myName);write(K_PID,projectId);write(K_FKEY,fbKey);
@@ -1722,16 +1723,16 @@ function drawSettings(){
   '<div class="tiny" style="line-height:1.7">מנוע קריאת טקסט שרץ על המכשיר שלך. בלי מפתח, בלי מכסה, בלי עלות. הפירוק לרשימת מרכיבים ושלבים נעשה בקוד. בפעם הראשונה נדרשת הורדה חד־פעמית של המנוע.</div>'+
   '<label for="ol">שפות לזיהוי</label>'+
   '<select id="ol">'+
-    '<option value="eng"'+(ocrLang==="eng"?" selected":"")+'>אנגלית בלבד (מומלץ)</option>'+
+    '<option value="eng"'+(ocrLang==="eng"?" selected":"")+'>אנגלית בלבד (מהיר, לא קורא עברית)</option>'+
     '<option value="heb"'+(ocrLang==="heb"?" selected":"")+'>עברית בלבד</option>'+
-    '<option value="eng+heb"'+(ocrLang==="eng+heb"?" selected":"")+'>אנגלית ועברית (איטי, עלול להפוך שורות)</option>'+
+    '<option value="eng+heb"'+(ocrLang==="eng+heb"?" selected":"")+'>אנגלית ועברית (מומלץ — קורא את שתיהן)</option>'+
   '</select>'+
   '<label style="display:flex;gap:9px;align-items:center;margin-top:16px;color:var(--ink);font-size:14px">'+
   '<input type="checkbox" id="po" '+(preferOcr?"checked":"")+' style="width:18px;height:18px;flex:0 0 auto">'+
   'העדף קריאה מקומית גם כשיש מפתח AI</label>'+
   '<div class="tiny">'+(useOcr()?"כרגע הקריאה מתבצעת מקומית.":"כרגע הקריאה מתבצעת דרך המודל, שגם מתרגם לעברית.")+'</div>'+
   '<div class="note">קריאה מקומית מוציאה את הטקסט כמו שהוא — היא לא מתרגמת לעברית ולא משלימה ערכים תזונתיים חסרים.</div>'+
-  '<div class="note">בחירת אנגלית ועברית יחד גורמת למנוע לסדר שורות לטיניות מימין לשמאל, והמספרים עוברים לסוף השורה. האפליקציה יודעת לשקם את זה, אבל למתכון באנגלית עדיף לבחור אנגלית בלבד.</div></div>'+
+  '<div class="note">מתכון בעברית מחייב שהעברית תיכלל בשפות הזיהוי. אם תבחר אנגלית בלבד, פוסט עברי ייקרא כטקסט חסר פשר. האפליקציה מזהה כשלון כזה ומנסה שוב אוטומטית עם עברית.</div></div>'+
 
   '<div class="sec"><h3>קריאת מתכון בעזרת AI</h3>'+
   '<div class="tiny" style="line-height:1.7">נדרש מפתח API של Google AI Studio. חינמי, בלי כרטיס אשראי, נשמר רק במכשיר הזה.</div>'+
@@ -1779,7 +1780,7 @@ function drawSettings(){
   '</div>';
 
   if(el("ol"))el("ol").onchange=function(v){
-    ocrLang=v.target.value||"eng";write(K_OCR,ocrLang);drawSettings()};
+    ocrLang=v.target.value||"eng+heb";write(K_OCR,ocrLang);drawSettings()};
   if(el("po"))el("po").onchange=function(v){
     preferOcr=!!v.target.checked;write(K_PREF,preferOcr);drawSettings()};
 
@@ -1889,9 +1890,21 @@ function buildIngredient(raw){
 
 function runOcr(files){
   busy="מכין…";render();
-  return ocrFiles(files).then(function(text){
-    var r=parseRecipe(text);
-    var e=blank();
+  var firstLang=ocrLang;
+  function attempt(lang){
+    return ocrFiles(files,lang).then(function(text){return{text:text,r:parseRecipe(text)}});
+  }
+  return attempt(firstLang).then(function(a){
+    /* קריאה באנגלית בלבד על פוסט בעברית מפיקה ג'יבריש — מנסים שוב עם עברית */
+    if(a.r.ingredients.length===0&&firstLang==="eng"){
+      busy="לא זוהו מרכיבים — מנסה שוב עם עברית…";render();
+      return attempt("eng+heb").then(function(b){
+        return (b.r.ingredients.length>a.r.ingredients.length)?b:a;
+      }).catch(function(){return a});
+    }
+    return a;
+  }).then(function(a){
+    var r=a.r,e=blank();
     e.title=r.title||"";e.source=r.source||"";e.yield=r.yield||"";
     e.ingredients=r.ingredients;e.ingredientsSrc=r.ingredientsSrc||"";
     e.stepsSrc=r.stepsSrc;e.steps=r.steps;
@@ -1899,11 +1912,11 @@ function runOcr(files){
     e.note="";
     busy="";editing=e;reviewMode=true;
     if(!e.ingredients.length){
-      err="לא זיהיתי רשימת מרכיבים בצילום. ודא שצילמת את הפוסט עצמו, ושכיתוב המתכון נראה בבירור.";
-      e.ingredientsSrc=r.raw.slice(0,4000);
+      err="לא זיהיתי רשימת מרכיבים בצילום. אם המתכון בעברית, ודא שבהגדרות נבחרה שפה הכוללת עברית.";
+      e.ingredientsSrc=(r.raw||"").slice(0,4000);
     }else if(r.quality<0.34){
       err="הקריאה חלקית: רק "+r.knownCount+" מתוך "+e.ingredients.length+
-          " מרכיבים זוהו במאגר. אם הצילום אינו של פוסט מתכון, מחק ונסה שוב.";
+          " מרכיבים זוהו במאגר. עבור עליהם והשלם את החסר.";
     }
     go("edit");
   }).catch(function(x){busy="";err=x.message||"הקריאה נכשלה.";view="list";render()});
