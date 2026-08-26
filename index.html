@@ -4,94 +4,208 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#E8EBE3">
-<meta name="app-version" content="1.6.0">
+<meta name="app-version" content="2.0.0">
 <title>פנקס מתכונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--ground:#E8EBE3;--surface:#FBFBF7;--ink:#1B241C;--muted:#6B7566;--line:#D3D8CB;--accent:#6B2140;--data:#46613A;--warn:#F6E7EA}
+:root{
+  /* דיו טורקיז כהה, נייר קריר, ושלושה צבעי מאקרו מעולם התבלינים */
+  --bg:#E7ECEA; --surface:#FCFDFB; --raise:#F2F5F2;
+  --ink:#12262B; --muted:#5C7379; --line:#C9D6D3; --rule:#12262B;
+  --accent:#0E5C56; --accent-soft:#DCEBE7;
+  --pro:#1B6B8F; --carb:#C08C1E; --fat:#A8452C;
+  --warn:#FBEAE3; --warn-ink:#8A3B1E;
+  --r:14px; --sp:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0E1719; --surface:#152225; --raise:#1B2B2E;
+    --ink:#E7EFEC; --muted:#8DA5A8; --line:#26383C; --rule:#E7EFEC;
+    --accent:#4FBFA8; --accent-soft:#16302E;
+    --pro:#63B4DA; --carb:#E3B85C; --fat:#E28468;
+    --warn:#33211B; --warn-ink:#F0B69C;
+  }
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
-body{background:var(--ground);color:var(--ink);font-family:'Heebo',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5}
-.wrap{max-width:640px;margin:0 auto;padding:0 18px 140px}
-h1,h2,h3,.serif{font-family:'Frank Ruhl Libre',Georgia,serif}
-header{padding:26px 0 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-h1{color:var(--accent);font-size:28px;font-weight:900;margin:0;line-height:1}
-.sub{font-size:12px;color:var(--muted);margin-top:6px}
+body{background:var(--bg);color:var(--ink);
+  font-family:'Assistant',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.55;
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.wrap{max-width:660px;margin:0 auto;padding:0 var(--sp) 150px}
+
+/* ===== סרגל עליון ===== */
+header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
+  padding:18px 0 12px;margin-bottom:2px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  border-bottom:1px solid var(--line)}
+h1{font-family:'Suez One',Georgia,serif;font-size:25px;font-weight:400;margin:0;
+  letter-spacing:-.01em;color:var(--ink);line-height:1.1}
+h1 em{font-style:normal;color:var(--accent)}
+.sub{font-size:11.5px;color:var(--muted);margin-top:5px;letter-spacing:.02em}
+.gear{font-size:12.5px;color:var(--muted);background:none;border:1px solid var(--line);
+  border-radius:999px;padding:6px 12px}
+.link{color:var(--accent);font-size:13.5px;font-weight:600;background:none;border:none;padding:0}
+
 button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
-.btn{background:var(--accent);color:#FBFBF7;border-radius:999px;padding:13px 20px;font-weight:700;width:100%;box-shadow:0 4px 14px rgba(107,33,64,.22)}
-.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:none;font-weight:500;padding:11px 20px;margin-top:8px}
-.btn:disabled{opacity:.55}
-.btn-ghost{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;font-size:14px}
-.btn-ghost.on{background:var(--accent);color:#FBFBF7;border-color:var(--accent)}
-.link{color:var(--accent);text-decoration:underline;text-underline-offset:4px;font-size:14px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:12px;display:block;width:100%;text-align:right}
-.card.tap{cursor:pointer}
-.card.tap:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.card.tap a{position:relative;z-index:1}
-.macros{display:flex;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
-.m{flex:1;text-align:center}
-.m b{font-family:'Frank Ruhl Libre',serif;font-size:17px;display:block;line-height:1}
-.m.big b{font-size:25px}
-.m small{font-size:10px;color:var(--muted);display:block;margin-top:5px}
-.m i{font-style:normal;font-size:10px;color:var(--muted);font-weight:400}
-label{display:block;font-size:12px;color:var(--muted);margin:14px 0 5px;font-weight:500}
-input,textarea,select{width:100%;font-family:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
-input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
-textarea{min-height:120px;resize:vertical;line-height:1.6}
+input,textarea,select{width:100%;font-family:inherit;font-size:16px;padding:12px 13px;
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+textarea{min-height:120px;resize:vertical;line-height:1.7}
+label{display:block;font-size:11.5px;color:var(--muted);margin:16px 0 6px;
+  font-weight:600;letter-spacing:.04em;text-transform:none}
 .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-.bar{height:3px;background:var(--line);border-radius:2px;margin-top:7px;overflow:hidden}
-.bar>i{display:block;height:100%;background:var(--data);border-radius:2px}
-.ing{padding:13px 16px;background:var(--surface)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+
+/* ===== כפתורים ===== */
+.btn{background:var(--accent);color:#fff;border-radius:999px;padding:14px 20px;
+  font-weight:800;width:100%;font-size:15.5px;letter-spacing:.01em;
+  box-shadow:0 6px 20px -6px color-mix(in srgb,var(--accent) 70%,transparent)}
+.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line);
+  box-shadow:none;font-weight:600;padding:12px 20px;margin-top:8px}
+.btn:disabled{opacity:.5}
+.btn-ghost{border:1px solid var(--line);background:var(--surface);border-radius:999px;
+  padding:9px 15px;font-size:13.5px;font-weight:600;color:var(--ink)}
+.btn-ghost.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;
+  padding:7px 14px;font-size:13px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.scroller{display:flex;gap:7px;overflow-x:auto;padding:14px 0 4px;
+  scrollbar-width:none;-ms-overflow-style:none}
+.scroller::-webkit-scrollbar{display:none}
+
+/* ===== כרטיס מתכון ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px;margin-top:12px;display:block;width:100%;text-align:right}
+.card.tap{cursor:pointer;transition:transform .16s ease,box-shadow .16s ease}
+.card.tap:active{transform:scale(.988)}
+.card.tap:hover{box-shadow:0 10px 30px -18px rgba(0,0,0,.45)}
+.card.tap:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.rtitle{font-family:'Suez One',Georgia,serif;font-size:19px;font-weight:400;
+  margin:0;line-height:1.3;letter-spacing:-.01em}
+.meta{font-size:11.5px;color:var(--muted);margin-top:5px}
+
+/* ===== החתימה: עמוד השדרה התזונתי ===== */
+.spine{display:flex;height:7px;border-radius:99px;overflow:hidden;margin:14px 0 9px;
+  background:var(--line)}
+.spine i{display:block;height:100%}
+.spine .p{background:var(--pro)} .spine .c{background:var(--carb)} .spine .f{background:var(--fat)}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.legend b{font-weight:800;color:var(--ink)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-inline-end:5px;
+  vertical-align:middle}
+.dot.p{background:var(--pro)} .dot.c{background:var(--carb)} .dot.f{background:var(--fat)}
+.kcal{font-family:'Suez One',Georgia,serif;font-size:27px;line-height:1;letter-spacing:-.02em}
+.kcal small{font-family:'Assistant',sans-serif;font-size:11px;color:var(--muted);
+  font-weight:600;margin-inline-start:5px}
+
+/* ===== לוח הערכים — ציטוט של תווית תזונה ===== */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px;margin-top:14px}
+.panel .top{border-bottom:6px solid var(--rule);padding-bottom:9px;margin-bottom:11px;
+  display:flex;justify-content:space-between;align-items:baseline}
+.panel .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--muted)}
+.nrow{display:flex;justify-content:space-between;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.nrow:last-child{border-bottom:none}
+.nrow b{font-weight:800}
+.nrow.thick{border-bottom-width:3px;border-bottom-color:var(--rule)}
+.nrow span.sub2{color:var(--muted);font-size:12.5px;padding-inline-start:14px}
+
+/* ===== מרכיבים ===== */
+.list-box{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:12px;
+  background:var(--surface)}
+.ing{padding:14px 16px}
 .ing+.ing{border-top:1px solid var(--line)}
-.list-box{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:10px}
 .ing-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.ing-top b{font-family:'Frank Ruhl Libre',serif;font-size:15px;flex-shrink:0}
-.tiny{font-size:11px;color:var(--muted);margin-top:6px}
-.tag{font-size:9.5px;border:1px solid var(--line);border-radius:999px;padding:1px 7px;color:var(--muted);margin-inline-start:5px;white-space:nowrap}
-.tag.ai{color:var(--accent);border-color:#E2CBD3;background:#FAF2F4}
-.note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:16px}
-.alert{background:var(--warn);color:var(--accent);border-radius:8px;padding:12px;font-size:13.5px;margin-top:14px;line-height:1.55}
-.info{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:13.5px;margin-top:14px;color:var(--muted)}
-.pulse{animation:pl 1.4s ease-in-out infinite}
+.ing-top b{font-family:'Suez One',serif;font-size:15px;flex-shrink:0;font-weight:400}
+.bar{height:3px;background:var(--line);border-radius:99px;margin-top:9px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.tiny{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.6}
+.tag{font-size:9.5px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;
+  color:var(--muted);margin-inline-start:6px;white-space:nowrap;font-weight:600}
+.tag.ai{color:var(--warn-ink);border-color:transparent;background:var(--warn)}
+
+/* ===== שלבי הכנה — מצב בישול ===== */
+.steps{list-style:none;padding:0;margin:14px 0 0;counter-reset:st}
+.steps li{display:flex;gap:13px;align-items:flex-start;padding:11px 0;
+  border-bottom:1px solid var(--line);cursor:pointer}
+.steps li:last-child{border-bottom:none}
+.steps li .n{counter-increment:st;font-family:'Suez One',serif;font-size:13px;
+  color:var(--accent);flex-shrink:0;width:26px;height:26px;border-radius:999px;
+  border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;
+  transition:background .15s ease,color .15s ease}
+.steps li .n::before{content:counter(st)}
+.steps li .tx{font-size:15px;line-height:1.65;flex:1}
+.steps li.done .n{background:var(--accent);color:#fff}
+.steps li.done .n::before{content:"✓"}
+.steps li.done .tx{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+
+/* ===== הודעות ===== */
+.note{background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:13px;
+  font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:14px}
+.alert{background:var(--warn);color:var(--warn-ink);border-radius:10px;padding:13px;
+  font-size:13.5px;margin-top:14px;line-height:1.6;font-weight:600}
+.info{background:var(--accent-soft);border-radius:10px;padding:13px;font-size:13.5px;
+  margin-top:14px;color:var(--ink);line-height:1.6}
+.pulse{animation:pl 1.5s ease-in-out infinite}
 @keyframes pl{0%,100%{opacity:.5}50%{opacity:1}}
-.dock{position:fixed;inset-inline:0;bottom:0;padding:34px 18px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--ground) 60%,transparent);pointer-events:none}
-.dock>div{max-width:640px;margin:0 auto;pointer-events:auto}
-ol{padding-inline-start:0;list-style:none;margin:12px 0 0}
-ol li{display:flex;gap:12px;margin-bottom:14px}
-ol li span{color:var(--accent);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:14px;flex-shrink:0;padding-top:2px}
-ol li div{font-size:15px;line-height:1.65}
-.sec{margin-top:30px}
-.sec h3{font-size:18px;margin:0 0 2px}
-.results{max-height:230px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px;background:var(--surface)}
-.results button{display:block;width:100%;text-align:right;padding:11px 13px;font-size:14px;border-bottom:1px solid var(--line)}
+#toast{position:fixed;inset-inline:0;bottom:104px;display:flex;justify-content:center;
+  z-index:60;pointer-events:none;padding:0 18px}
+#toast div{background:var(--ink);color:var(--surface);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);
+  animation:tin .25s ease}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ===== סרגל תחתון ===== */
+.dock{position:fixed;inset-inline:0;bottom:0;padding:40px 18px calc(18px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--bg) 58%,transparent);pointer-events:none;z-index:40}
+.dock>div{max-width:660px;margin:0 auto;pointer-events:auto}
+
+.sec{margin-top:34px}
+.sec h3{font-family:'Suez One',serif;font-size:18px;font-weight:400;margin:0 0 3px}
+.results{max-height:250px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;
+  margin-top:7px;background:var(--surface)}
+.results button{display:block;width:100%;text-align:right;padding:12px 14px;font-size:14px;
+  border-bottom:1px solid var(--line)}
 .results button:last-child{border-bottom:none}
 .results button small{color:var(--muted);font-size:11px;margin-inline-start:6px}
+.pill-row{display:flex;gap:8px;align-items:center}
+.step{width:36px;height:36px;border:1px solid var(--line);border-radius:999px;font-size:19px;
+  background:var(--surface);flex-shrink:0}
 .hide{display:none}
-.empty{text-align:center;margin-top:56px}
-.empty p{color:var(--muted);font-size:14px;line-height:1.7}
-details{margin-top:22px}
-summary{font-size:13px;color:var(--muted);cursor:pointer;padding:6px 0}
-.gear{font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:4px}
-.ver{text-align:center;font-size:10.5px;color:var(--muted);margin-top:34px;opacity:.75}
-.log{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;line-height:1.7;background:#F2F3EE;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all;direction:ltr;text-align:left;margin-top:8px}
+.empty{text-align:center;margin-top:64px;padding:0 10px}
+.empty h2{font-family:'Suez One',serif;font-size:22px;font-weight:400;margin:0 0 10px}
+.empty p{color:var(--muted);font-size:14.5px;line-height:1.8}
+details{margin-top:24px}
+summary{font-size:13px;color:var(--muted);cursor:pointer;padding:7px 0;font-weight:600}
+.log{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;line-height:1.7;
+  background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:11px;
+  max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all;
+  direction:ltr;text-align:left;margin-top:8px}
+.ver{text-align:center;font-size:10.5px;color:var(--muted);margin-top:40px;opacity:.7;
+  letter-spacing:.05em}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div><h1>פנקס מתכונים</h1><div class="sub" id="sub"></div></div>
-    <div style="text-align:left">
+    <div>
+      <h1>פנקס <em>מתכונים</em></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
       <button class="link hide" id="back">חזרה</button>
-      <div><button class="gear" id="gear">הגדרות</button></div>
+      <button class="gear" id="gear">הגדרות</button>
     </div>
   </header>
   <div id="app"></div>
-  <div class="ver">פנקס מתכונים · גרסה 1.6.0</div>
+  <div class="ver">פנקס מתכונים · גרסה 2.0.0</div>
 </div>
+<div id="toast"></div>
 <div class="dock"><div id="dock"></div></div>
 <input type="file" id="picker" accept="image/*" multiple class="hide">
 
@@ -202,7 +316,7 @@ var DB=[
 ];
 
 /* ============ אחסון ============ */
-var APP_VERSION="1.6.0";
+var APP_VERSION="2.0.0";
 var K_REC="recipes-v2",K_FOOD="custom-foods-v2",K_KEY="ai-key-v1",K_MODEL="ai-model-v1",
     K_PID="fb-project-v1",K_FKEY="fb-key-v1",K_NAME="my-name-v1";
 var storageOK=true,mem={};
@@ -266,6 +380,29 @@ function macroRow(v,big){var cl=big?"m big":"m";return '<div class="macros">'+
   '<div class="'+cl+'"><b>'+r0(v.p)+'<i>ג</i></b><small>חלבון</small></div>'+
   '<div class="'+cl+'"><b>'+r0(v.c)+'<i>ג</i></b><small>פחמימות</small></div>'+
   '<div class="'+cl+'"><b>'+r0(v.f)+'<i>ג</i></b><small>שומן</small></div></div>'}
+
+/* ===== החתימה: פס יחסי חלבון / פחמימות / שומן ===== */
+function spine(v){
+  var kp=(v.p||0)*4,kc=(v.c||0)*4,kf=(v.f||0)*9,t=kp+kc+kf;
+  if(!(t>0))return '<div class="spine"></div>';
+  var w=function(x){return (x/t*100).toFixed(1)+"%"};
+  return '<div class="spine">'+
+    '<i class="p" style="width:'+w(kp)+'"></i>'+
+    '<i class="c" style="width:'+w(kc)+'"></i>'+
+    '<i class="f" style="width:'+w(kf)+'"></i></div>'+
+    '<div class="legend">'+
+    '<span><i class="dot p"></i>חלבון <b>'+r0(v.p)+'</b> גר\'</span>'+
+    '<span><i class="dot c"></i>פחמימות <b>'+r0(v.c)+'</b> גר\'</span>'+
+    '<span><i class="dot f"></i>שומן <b>'+r0(v.f)+'</b> גר\'</span></div>';
+}
+var toastT=null;
+function toast(msg){
+  var el2=document.getElementById("toast");
+  if(!el2)return;
+  el2.innerHTML='<div>'+esc(msg)+'</div>';
+  if(toastT)clearTimeout(toastT);
+  toastT=setTimeout(function(){el2.innerHTML=""},2600);
+}
 function srcTag(s){return s==="ai"?'<span class="tag ai">הערכת AI</span>':
   s==="off"?'<span class="tag">מאגר מוצרים</span>':
   s==="db"?'<span class="tag">מאגר</span>':""}
@@ -305,7 +442,7 @@ function netHint(e){
 var view="list",editing=null,openId=null,busy="",err="",query="",reviewMode=false;
 var syncMsg="",lastSync=0,ingEdit=null,aiBusy=false;
 var searchQ="",searchBusy=false,searchHits=null,searchErr="";
-var filterCat="",trBusy=false;
+var filterCat="",trBusy=false,listQuery="",doneSteps={};
 
 function hasHebrew(t){return /[\u0590-\u05FF]/.test(String(t||""))}
 function needsTranslation(e){
@@ -553,46 +690,55 @@ function drawList(){
   if(err)html+='<div class="alert">'+esc(err)+'</div>';
   if(busy)html+='<div class="info pulse">'+esc(busy)+'</div>';
   if(!recipes.length){
-    html+='<div class="empty"><h2 class="serif" style="font-size:20px;margin:0 0 8px">הפנקס ריק</h2>'+
-      '<p>צלם מתכון מאינסטגרם ותן לו להיקרא לבד,<br>או הזן מתכון ידנית מהמאגר.</p></div>';
+    html+='<div class="empty"><h2>עוד אין מתכונים</h2>'+
+      '<p>צלם מתכון מאינסטגרם — הקריאה מתבצעת על המכשיר שלך,<br>'+
+      'והמרכיבים מתפרקים לערכים תזונתיים לבד.</p></div>';
   }else{
+    html+='<input id="srch" value="'+esc(listQuery)+'" placeholder="חיפוש לפי שם, מרכיב או יוצר" autocomplete="off" inputmode="search" style="margin-top:14px">';
     var used={},cats=[];
     recipes.forEach(function(r){if(r.cat&&!used[r.cat]){used[r.cat]=1;cats.push(r.cat)}});
     var uncat=recipes.filter(function(r){return !r.cat}).length;
     if(cats.length){
-      html+='<div class="row" style="margin-top:14px;gap:6px">'+
-        '<button class="btn-ghost'+(filterCat===""?" on":"")+'" data-filter="" style="font-size:12.5px;padding:7px 12px">הכל</button>'+
+      html+='<div class="scroller">'+
+        '<button class="chip'+(filterCat===""?" on":"")+'" data-filter="">הכל</button>'+
         cats.map(function(c){
-          return '<button class="btn-ghost'+(filterCat===c?" on":"")+'" data-filter="'+esc(c)+'" style="font-size:12.5px;padding:7px 12px">'+esc(c)+'</button>'}).join("")+
-        (uncat?'<button class="btn-ghost'+(filterCat==="__none__"?" on":"")+'" data-filter="__none__" style="font-size:12.5px;padding:7px 12px">ללא קטגוריה</button>':"")+
+          return '<button class="chip'+(filterCat===c?" on":"")+'" data-filter="'+esc(c)+'">'+esc(c)+'</button>'}).join("")+
+        (uncat?'<button class="chip'+(filterCat==="__none__"?" on":"")+'" data-filter="__none__">ללא קטגוריה</button>':"")+
         '</div>';
     }
+    var q=(listQuery||"").trim().toLowerCase();
     var shown=recipes.filter(function(r){
-      if(filterCat==="")return true;
-      if(filterCat==="__none__")return !r.cat;
-      return r.cat===filterCat});
-    if(!shown.length)html+='<div class="note">אין מתכונים בקטגוריה הזו.</div>';
+      if(filterCat==="__none__"&&r.cat)return false;
+      if(filterCat&&filterCat!=="__none__"&&r.cat!==filterCat)return false;
+      if(!q)return true;
+      var hay=[r.title,r.source,r.cat,r.by].concat(
+        (r.ingredients||[]).map(function(i){return i.name})).join(" ").toLowerCase();
+      return hay.indexOf(q)>=0;});
+    if(!shown.length)html+='<div class="note">'+(q?"לא נמצא מתכון שמתאים לחיפוש. נסה מילה אחרת.":"אין מתכונים בקטגוריה הזו.")+'</div>';
     html+=shown.map(function(r){var N=recipeNumbers(r);var u=safeUrl(r.link);
+      var head=N.unknown?"למנה אחת":"כל המתכון";
+      var show=N.unknown?N.per:N.total;
       return '<div class="card tap" data-open="'+r.id+'" role="button" tabindex="0">'+
-        '<h2 class="serif" style="font-size:18px;margin:0;line-height:1.35">'+esc(r.title||"ללא שם")+'</h2>'+
-        (r.cat?'<span class="tag" style="margin:4px 0 0;display:inline-block">'+esc(r.cat)+'</span>':"")+
-        (r.source?'<div class="tiny" style="margin-top:2px">'+esc(r.source)+'</div>':"")+
-        (N.unknown
-          ? '<div class="tiny" style="margin-top:11px;font-weight:700">למנה אחת, לפי המתכון</div>'+
-            macroRow(N.per)+
-            '<div class="tiny" style="margin-top:8px;color:var(--accent)">המתכון לא ציין כמה מנות יוצאות — קבע זאת בעריכה כדי לראות סך הכל</div>'
-          : '<div class="tiny" style="margin-top:11px;font-weight:700">כל המתכון'+
-            (N.fromRecipe?" · לפי המתכון":" · לפי חישוב המרכיבים")+'</div>'+
-            macroRow(N.total)+
-            (N.servings>1
-              ? '<div class="tiny" style="margin-top:10px;font-weight:700">למנה אחת · '+N.servings+' מנות</div>'+
-                macroRow(N.per)
-              : '<div class="tiny" style="margin-top:8px">המתכון כולו הוא מנה אחת</div>'))+
-        '<div class="tiny">'+(r.yield?esc(r.yield):"")+
-        (r.by?(r.yield?" · ":"")+'הוסיף '+esc(r.by):"")+'</div>'+
-        (u?'<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">'+
+          '<div style="flex:1;min-width:0">'+
+            '<h2 class="rtitle">'+esc(r.title||"ללא שם")+'</h2>'+
+            '<div class="meta">'+(r.cat?esc(r.cat):"")+
+              (r.source?(r.cat?" · ":"")+esc(r.source):"")+
+              (r.by?" · "+esc(r.by):"")+'</div>'+
+          '</div>'+
+          '<div style="text-align:center;flex-shrink:0">'+
+            '<div class="kcal">'+r0(show.k)+'</div>'+
+            '<div class="meta" style="margin-top:3px">'+esc(head)+'</div>'+
+          '</div>'+
+        '</div>'+
+        spine(show)+
+        '<div class="meta" style="margin-top:9px">'+
+          (N.unknown?'מספר המנות לא צוין':
+           (N.servings>1?N.servings+' מנות · '+r0(N.per.k)+' קלוריות למנה':'מנה אחת'))+
+          ' · '+(N.fromRecipe?'לפי המתכון':'לפי חישוב המרכיבים')+'</div>'+
+        (u?'<div style="margin-top:12px;padding-top:11px;border-top:1px solid var(--line)">'+
           '<a class="link" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer nofollow">'+
-          'פתיחת המקור · '+esc(shortUrl(u))+'</a></div>':"")+
+          'פתיחת המקור ↗</a></div>':"")+
         '</div>'}).join("");
   }
   html+='<details><summary>גיבוי והעברה למכשיר אחר</summary>'+
@@ -600,6 +746,15 @@ function drawList(){
     '<div class="row" style="margin-top:12px"><button class="btn-ghost" id="exp">ייצוא לקובץ</button>'+
     '<button class="btn-ghost" id="imp">ייבוא מקובץ</button></div></div></details>';
   app.innerHTML=html;
+  var sr=el("srch");
+  if(sr){
+    sr.oninput=function(v){
+      listQuery=v.target.value;
+      drawList();
+      var n=el("srch");
+      if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}
+    };
+  }
 }
 
 function drawDetail(){
@@ -611,40 +766,51 @@ function drawDetail(){
   var steps=(r.steps||"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
   var stepsSrc=(r.stepsSrc||"").split("\n").map(function(x){return x.trim()}).filter(Boolean);
   var stepsHtml="";
+  var done=doneSteps[r.id]||{};
+  function stepList(arr,cls){
+    return '<ol class="steps">'+arr.map(function(x,n){
+      return '<li class="'+(done[cls+n]?"done":"")+'" data-step="'+cls+n+'">'+
+        '<span class="n"></span><span class="tx" dir="auto">'+esc(x)+'</span></li>'}).join("")+'</ol>';
+  }
   if(steps.length){
-    stepsHtml='<div class="sec"><h3>אופן ההכנה</h3><ol>'+steps.map(function(x,n){
-      return '<li><span>'+(n+1)+'</span><div>'+esc(x)+'</div></li>'}).join("")+'</ol>'+
-      (stepsSrc.length?'<details><summary>הצגת המקור</summary><ol style="margin-top:6px">'+
-        stepsSrc.map(function(x,n){return '<li><span>'+(n+1)+'</span><div dir="auto">'+esc(x)+'</div></li>'}).join("")+
-        '</ol></details>':"")+'</div>';
+    stepsHtml='<div class="sec"><h3>אופן ההכנה</h3>'+
+      '<div class="tiny">לחיצה על שלב מסמנת אותו כבוצע</div>'+stepList(steps,"a")+
+      (stepsSrc.length?'<details><summary>הצגת המקור</summary>'+stepList(stepsSrc,"b")+'</details>':"")+'</div>';
   }else if(stepsSrc.length){
-    stepsHtml='<div class="sec"><h3>אופן ההכנה</h3><div class="tiny">כמו במקור, ללא תרגום</div><ol>'+
-      stepsSrc.map(function(x,n){return '<li><span>'+(n+1)+'</span><div dir="auto">'+esc(x)+'</div></li>'}).join("")+'</ol></div>';
+    stepsHtml='<div class="sec"><h3>אופן ההכנה</h3><div class="tiny">כמו במקור, ללא תרגום</div>'+
+      stepList(stepsSrc,"b")+'</div>';
   }
   app.innerHTML=
   (err?'<div class="alert">'+esc(err)+'</div>':"")+
-  '<h2 class="serif" style="font-size:24px;font-weight:900;margin:20px 0 0;line-height:1.25">'+esc(r.title||"ללא שם")+'</h2>'+
+  '<h2 class="rtitle" style="font-size:26px;margin:24px 0 0;line-height:1.25">'+esc(r.title||"ללא שם")+'</h2>'+
   (r.source?'<div class="tiny" style="margin-top:4px">מקור: '+esc(r.source)+'</div>':"")+
   (r.cat?'<div style="margin-top:8px"><span class="tag">'+esc(r.cat)+'</span></div>':"")+
   (safeUrl(r.link)?'<div style="margin-top:10px"><a class="link" href="'+esc(safeUrl(r.link))+
     '" target="_blank" rel="noopener noreferrer nofollow">פתיחת המתכון המקורי · '+esc(shortUrl(r.link))+'</a></div>':"")+
   (N.unknown
-   ? '<div class="card"><span class="tiny" style="font-weight:700;margin:0">למנה אחת, לפי המתכון</span>'+
-     macroRow(N.per,true)+
-     '<div class="tiny" style="margin-top:12px;padding-top:11px;border-top:1px solid var(--line);color:var(--accent);line-height:1.6">'+
-     'המתכון פרסם ערכים למנה אחת אך לא ציין כמה מנות יוצאות, ולכן אי אפשר להציג סך הכל. '+
-     'היכנס לעריכה וקבע את מספר המנות.</div>'+
-     (r.yield?'<div class="tiny" style="margin-top:6px">תפוקה לפי המקור: '+esc(r.yield)+'</div>':"")+
+   ? '<div class="panel">'+
+     '<div class="top"><span class="eyebrow">למנה אחת · לפי המתכון</span>'+
+     '<span class="kcal">'+r0(N.per.k)+'<small>קלוריות</small></span></div>'+
+     spine(N.per)+
+     '<div class="alert" style="margin-top:14px">המתכון לא ציין כמה מנות יוצאות, ולכן אין סך הכל. '+
+     'קבע את מספר המנות בעריכה.</div>'+
+     (r.yield?'<div class="tiny">תפוקה לפי המקור: '+esc(r.yield)+'</div>':"")+
      '</div>'
-   : '<div class="card"><span class="tiny" style="font-weight:700;margin:0">כל המתכון</span>'+
-     macroRow(N.total,true)+
-     (N.servings>1?'<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">'+
-       '<span class="tiny" style="font-weight:700;margin:0">למנה אחת · '+N.servings+' מנות במתכון</span>'+
-       macroRow(N.per)+'</div>':
-       '<div class="tiny" style="margin-top:12px;padding-top:11px;border-top:1px solid var(--line)">המתכון כולו הוא מנה אחת</div>')+
-     '<div class="tiny" style="margin-top:10px">'+
-       (N.fromRecipe?'המספרים לפי מה שהמתכון מפרסם':'המספרים לפי חישוב המרכיבים — המתכון לא פרסם ערכים')+
-       (r.yield?' · תפוקה: '+esc(r.yield):"")+'</div>'+
+   : '<div class="panel">'+
+     '<div class="top"><span class="eyebrow">כל המתכון · '+
+       (N.fromRecipe?'לפי המתכון':'לפי חישוב המרכיבים')+'</span>'+
+     '<span class="kcal">'+r0(N.total.k)+'<small>קלוריות</small></span></div>'+
+     spine(N.total)+
+     '<div style="margin-top:14px">'+
+       '<div class="nrow thick"><span>מנות במתכון</span><b>'+N.servings+'</b></div>'+
+       (N.servings>1?'<div class="nrow"><span>קלוריות למנה</span><b>'+r0(N.per.k)+'</b></div>'+
+         '<div class="nrow"><span class="sub2">חלבון למנה</span><b>'+r1(N.per.p)+' גר\'</b></div>'+
+         '<div class="nrow"><span class="sub2">פחמימות למנה</span><b>'+r1(N.per.c)+' גר\'</b></div>'+
+         '<div class="nrow"><span class="sub2">שומן למנה</span><b>'+r1(N.per.f)+' גר\'</b></div>':"")+
+       '<div class="nrow"><span>שומן רווי</span><b>'+r1(N.computed.s)+' גר\'</b></div>'+
+       '<div class="nrow"><span>סיבים</span><b>'+r1(N.computed.b)+' גר\'</b></div>'+
+     '</div>'+
+     (r.yield?'<div class="tiny">תפוקה לפי המקור: '+esc(r.yield)+'</div>':"")+
      '</div>')+
   (function(){
     if(!N.fromRecipe)return "";
@@ -656,16 +822,14 @@ function drawDetail(){
         ' קלוריות, בעוד שמצוינות '+r0(t.k)+'. שווה לפתוח את המתכון המקורי ולתקן בעריכה.</div>';
     return "";
   })()+
-  (N.fromRecipe?'<div class="card"><span class="tiny" style="font-weight:700;margin:0">לשם השוואה — חישוב לפי המרכיבים</span>'+
-    '<div style="font-size:14px;margin-top:7px">'+r0(N.computed.k)+' קלוריות · '+r1(N.computed.p)+
-    ' חלבון · '+r1(N.computed.c)+' פחמימות · '+r1(N.computed.f)+' שומן</div>'+
-    '<div class="tiny">שומן רווי '+r1(N.computed.s)+' · סיבים '+r1(N.computed.b)+'</div>'+
+  (N.fromRecipe?'<div class="note"><b>לשם השוואה — חישוב לפי המרכיבים</b>'+
+    '<div style="font-size:14px;margin-top:7px">'+r0(N.computed.k)+' קלוריות · '+r0(N.computed.p)+
+    ' חלבון · '+r0(N.computed.c)+' פחמימות · '+r0(N.computed.f)+' שומן</div>'+
     (Math.abs(N.computed.k-N.total.k)>N.total.k*0.15
       ?'<div class="tiny" style="color:var(--accent);margin-top:8px;line-height:1.6">פער של יותר מ-15% מול המספרים שהמתכון מפרסם. ההערכה מבוססת על ערכים ממוצעים, ולכן שווה לבדוק את המרכיבים שסומנו כמוערכים.</div>'
       :'<div class="tiny" style="margin-top:8px">קרוב למספרים שהמתכון מפרסם.</div>')+
     '</div>'
-   :'<div class="card"><span class="tiny" style="font-weight:700;margin:0">ערכים נוספים מהחישוב</span>'+
-    '<div class="tiny" style="margin-top:6px">שומן רווי '+r1(N.computed.s)+' גר\' · סיבים '+r1(N.computed.b)+' גר\'</div></div>')+
+   :"")+
   '<div class="sec"><h3>מרכיבים</h3><div class="tiny">הערכים הם לכמות המלאה במתכון</div><div class="list-box">'+
     (r.ingredients.length?r.ingredients.map(function(i){var v=ingTotals(i);
       return '<div class="ing"><div class="ing-top">'+
@@ -1847,7 +2011,7 @@ function drawSettings(){
     req("בדיקת AI","https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(m)+":generateContent?key="+encodeURIComponent(k),
       {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"אמור: אישור"}]}]})})
     .then(function(o){if(!o.ok)throw new Error((o.d.error&&o.d.error.message)||("HTTP "+o.status));
-      saveSettings();alert("החיבור תקין והמפתח נשמר.");render()})
+      saveSettings();toast("המפתח נשמר");render()})
     .catch(function(e){alert("החיבור נכשל: "+e.message)});
   };
   if(el("dk"))el("dk").onclick=function(){if(!confirm("למחוק את המפתח?"))return;apiKey="";write(K_KEY,"");go("settings")};
@@ -2005,6 +2169,14 @@ document.addEventListener("click",function(ev){
   /* קישור חיצוני — נותנים לדפדפן לטפל בו, בלי לפתוח את המתכון */
   if(ev.target.closest("a"))return;
 
+  var st=ev.target.closest&&ev.target.closest("[data-step]");
+  if(st&&view==="detail"){
+    if(!doneSteps[openId])doneSteps[openId]={};
+    var kk=st.dataset.step;
+    doneSteps[openId][kk]=!doneSteps[openId][kk];
+    st.classList.toggle("done");
+    return}
+
   var card=ev.target.closest("[data-open]");
   if(card&&!ev.target.closest("button")){
     openId=card.dataset.open;go("detail");return}
@@ -2082,7 +2254,7 @@ document.addEventListener("click",function(ev){
     syncMsg="מעלה "+recipes.length+" מתכונים…";drawList();
     Promise.all(recipes.map(function(r){if(!r.updated)r.updated=Date.now();return cloudPut(r)}))
     .then(function(){saveRecipes();syncMsg="";lastSync=Date.now();err="";
-      alert("כל המתכונים הועלו לענן.");render()})
+      toast("כל המתכונים הועלו");render()})
     .catch(function(e){syncMsg="";err="ההעלאה נכשלה: "+e.message;render()});
     return}
   if(b.id==="exp"){
@@ -2100,7 +2272,7 @@ document.addEventListener("click",function(ev){
         recipes=recipes.concat(fresh);
         if(d.customFoods){var cn={};customFoods.forEach(function(f){cn[f.n]=1});
           customFoods=customFoods.concat(d.customFoods.filter(function(f){return !cn[f.n]}));write(K_FOOD,customFoods)}
-        saveRecipes();go("list");alert("הייבוא הושלם. נוספו "+fresh.length+" מתכונים.");
+        saveRecipes();go("list");toast("יובאו "+fresh.length+" מתכונים");
       }catch(e){alert("הקובץ לא תקין.")}};
       fr.readAsText(inp.files[0])};
     inp.click();return}
