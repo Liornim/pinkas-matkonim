@@ -98,6 +98,29 @@ sec("חסינות כללית על כל הצילומים");
   ok(f+" — אין שורת ערכים כמרכיב",!P.ingredients.some(i=>/חלבון \d|פחמימות \d|Protein: /.test(i.name)));
 });
 
+
+sec("Cheesecake — OCR אמיתי, בלי כותרת Ingredients");
+const CK=X.parseRecipe(load("cheesecake_en.txt")),NC=X.recipeNumbers(CK);
+ok("כותרת = שם המנה",CK.title==="High-Protein Cheesecake",CK.title);
+ok("לא נבחרה שורת דירוג",!/Worth|Hype|Episode/i.test(CK.title),CK.title);
+ok("לא נבחר רעש מפריים הווידאו",!/Reels|[\u0590-\u05FF]/.test(CK.title),CK.title);
+ok("5 מרכיבים",CK.ingredients.length===5,CK.ingredients.length);
+ok("יוגורט יווני זוהה",has(CK,"יוגורט יווני"),CK.ingredients.map(i=>i.name.split(" — ")[0]).join(", "));
+ok("כוס יוגורט = 245 גרם",get(CK,"יוגורט יווני 0%").qty===245,get(CK,"יוגורט יווני 0%").qty);
+ok("ביצה 50 גרם",get(CK,"ביצה").qty===50);
+ok("2 כפות דבש = 42 גרם",get(CK,"דבש").qty===42,get(CK,"דבש").qty);
+ok("שורת התיאור לא הפכה למרכיב",!CK.ingredients.some(i=>/Surprisingly|tastes/i.test(i.name)));
+ok("גבינה צהובה לא הומצאה",!has(CK,"גבינה צהובה"));
+ok("'For 1 serving' → מנה אחת",CK.servings===1,CK.servings);
+ok("מספר המנות ידוע",CK.svKnown===true);
+ok("302 קלוריות נקלטו",CK.stated&&CK.stated.k===302,JSON.stringify(CK.stated));
+ok("שומן 4 ולא 40",CK.stated.f===4,CK.stated.f);
+ok("חלבון 30",CK.stated.p===30);
+ok("פחמימות 38",CK.stated.c===38);
+ok("מוצג 302 לפי המתכון",NC.total.k===302&&NC.fromRecipe);
+ok("לא מסומן כלא ידוע",NC.unknown===false);
+ok("חישוב המרכיבים קרוב למוצהר",Math.abs(X.recipeTotals(CK).k-302)<60,Math.round(X.recipeTotals(CK).k));
+
 console.log("\n"+"═".repeat(42));
 console.log("  עברו: "+PASS+"    נכשלו: "+FAIL);
 console.log("═".repeat(42));
